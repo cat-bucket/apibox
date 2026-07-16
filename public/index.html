@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MinAI Lite</title>
+    <meta name="description" content="轻量 AI 对话客户端" />
+    <link rel="icon" href="/assets/ai-avatar.png" />
+    <style>
+      :root {
+        --bg: #f8f9fa;
+        --surface: #ffffff;
+        --border: #dee2e6;
+        --text: #212529;
+        --text-secondary: #6c757d;
+        --primary: #4263eb;
+        --primary-hover: #3b5bdb;
+        --assistant-bg: #e9ecef;
+        --user-bg: #4263eb;
+        --user-text: #fff;
+        --shadow: 0 1px 3px rgba(0,0,0,0.08);
+        --radius: 12px;
+        --transition: 0.2s ease;
+      }
+      [data-theme="dark"] {
+        --bg: #1a1a2e;
+        --surface: #16213e;
+        --border: #2a2a4a;
+        --text: #e0e0e0;
+        --text-secondary: #a0a0b0;
+        --primary: #5c7cfa;
+        --primary-hover: #748ffc;
+        --assistant-bg: #2a2a4a;
+        --user-bg: #5c7cfa;
+        --user-text: #fff;
+        --shadow: 0 1px 4px rgba(0,0,0,0.3);
+      }
+      * { margin:0; padding:0; box-sizing:border-box; }
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); height:100vh; overflow:hidden; }
+      button { cursor:pointer; border:none; background:none; color:inherit; font:inherit; }
+      a { color: inherit; text-decoration: none; }
+      .app-shell { display:flex; height:100vh; }
+      /* 侧边栏 */
+      .side-panel { width:280px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; transition: transform var(--transition); z-index:10; }
+      .side-panel.collapsed { transform: translateX(-100%); }
+      @media (max-width:768px) { .side-panel { position:fixed; top:0; left:0; bottom:0; transform: translateX(-100%); } .side-panel.open { transform: translateX(0); } }
+      .brand { display:flex; align-items:center; padding:16px; gap:10px; border-bottom:1px solid var(--border); }
+      .brand img { width:32px; height:32px; border-radius:8px; }
+      .brand strong { font-size:16px; }
+      .new-chat { display:flex; align-items:center; gap:6px; margin:12px; padding:10px 14px; background:var(--primary); color:#fff; border-radius:var(--radius); font-weight:500; transition: background var(--transition); }
+      .new-chat:hover { background:var(--primary-hover); }
+      .conversation-section { flex:1; overflow-y:auto; padding:0 8px; }
+      .sidebar-label { font-size:12px; text-transform:uppercase; color:var(--text-secondary); padding:8px 12px 4px; }
+      .conversation-list { display:flex; flex-direction:column; gap:2px; }
+      .conv-item { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-radius:var(--radius); cursor:pointer; transition: background var(--transition); font-size:14px; }
+      .conv-item:hover { background:var(--assistant-bg); }
+      .conv-item.active { background:var(--primary); color:#fff; }
+      .conv-item .title { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .conv-item .actions { display:none; gap:4px; margin-left:4px; }
+      .conv-item:hover .actions { display:flex; }
+      .conv-item .actions button { font-size:14px; padding:2px 6px; border-radius:4px; }
+      .conv-item .actions button:hover { background:rgba(0,0,0,0.2); }
+      /* 主区域 */
+      .chat-panel { flex:1; display:flex; flex-direction:column; min-width:0; }
+      .chat-header { display:flex; align-items:center; justify-content:space-between; padding:8px 16px; border-bottom:1px solid var(--border); background:var(--surface); }
+      .header-title { display:flex; align-items:center; gap:12px; }
+      .mobile-sidebar-button { display:none; background:var(--primary); color:#fff; width:36px; height:36px; border-radius:8px; align-items:center; justify-content:center; }
+      @media (max-width:768px) { .mobile-sidebar-button { display:flex; } }
+      .model-picker { position:relative; }
+      .model-pill { background:var(--assistant-bg); padding:6px 14px; border-radius:20px; font-size:14px; }
+      .model-popover { position:absolute; top:100%; right:0; margin-top:4px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); min-width:160px; padding:4px; z-index:20; display:none; }
+      .model-popover.open { display:block; }
+      .model-popover button { display:block; width:100%; text-align:left; padding:8px 12px; border-radius:6px; font-size:14px; }
+      .model-popover button:hover { background:var(--assistant-bg); }
+      .theme-toggle { font-size:18px; padding:4px 8px; border-radius:8px; }
+      .messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:16px; }
+      .message { display:flex; gap:8px; max-width:85%; }
+      .message.user { align-self:flex-end; flex-direction:row-reverse; }
+      .message .avatar { width:30px; height:30px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; flex-shrink:0; }
+      .message.assistant .avatar { background:var(--assistant-bg); color:var(--text); }
+      .message .bubble { background:var(--assistant-bg); padding:10px 14px; border-radius:var(--radius); line-height:1.5; font-size:15px; }
+      .message.user .bubble { background:var(--user-bg); color:var(--user-text); }
+      .composer { padding:12px 16px; border-top:1px solid var(--border); background:var(--surface); display:flex; gap:8px; align-items:flex-end; }
+      .composer textarea { flex:1; resize:none; border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; font:inherit; background:var(--bg); color:var(--text); outline:none; max-height:120px; }
+      .composer textarea:focus { border-color:var(--primary); }
+      .composer button { background:var(--primary); color:#fff; padding:8px 18px; border-radius:var(--radius); font-weight:500; }
+      .composer button:disabled { opacity:0.5; cursor:default; }
+      /* 加载动画 */
+      .loading-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--text-secondary); animation: blink 1.4s infinite both; }
+      .loading-dot:nth-child(2) { animation-delay:0.2s; }
+      .loading-dot:nth-child(3) { animation-delay:0.4s; }
+      @keyframes blink { 0%,80%,100% { opacity:0; } 40% { opacity:1; } }
+      .empty-state { text-align:center; padding:40px; color:var(--text-secondary); }
+      /* 文件预览 */
+      .file-preview { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+      .file-preview .chip { background:var(--assistant-bg); padding:4px 10px; border-radius:20px; font-size:13px; display:flex; align-items:center; gap:4px; }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell" id="appShell">
+      <!-- 侧边栏 -->
+      <aside class="side-panel" id="sidePanel" aria-label="会话">
+        <div class="brand">
+          <img src="/assets/ai-avatar.png" alt="" />
+          <strong>MinAI Lite</strong>
+          <button class="mobile-sidebar-button" id="sidebarClose" style="margin-left:auto; background:transparent; color:var(--text);" aria-label="关闭">✕</button>
+        </div>
+        <button class="new-chat" id="newChatBtn">+ 新对话</button>
+        <div class="conversation-section">
+          <div class="sidebar-label">最近对话</div>
+          <div class="conversation-list" id="convList"></div>
+        </div>
+      </aside>
+
+      <!-- 主聊天区域 -->
+      <section class="chat-panel">
+        <header class="chat-header">
+          <div class="header-title">
+            <button class="mobile-sidebar-button" id="mobileSidebarBtn" aria-label="打开对话栏">☰</button>
+            <span style="font-weight:600;">AI Assistant</span>
+          </div>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <div class="model-picker" id="modelPicker">
+              <button class="model-pill" id="modelBtn" aria-haspopup="listbox" aria-expanded="false">
+                <span id="modelLabel">默认模型</span>
+              </button>
+              <div class="model-popover hidden" id="modelPopover" role="listbox"></div>
+            </div>
+            <button class="theme-toggle" id="themeToggle" aria-label="切换主题">☾</button>
+          </div>
+        </header>
+
+        <div class="messages" id="messages" aria-live="polite"></div>
+
+        <form class="composer" id="chatForm">
+          <div style="flex:1; display:flex; flex-direction:column;">
+            <div class="file-preview" id="filePreview"></div>
+            <textarea id="userInput" rows="1" placeholder="输入消息…" aria-label="消息输入"></textarea>
+          </div>
+          <input type="file" id="fileInput" multiple hidden accept="image/*,.txt,.pdf,.md,.json,.csv,.py,.js,.html,.css" />
+          <button type="button" id="attachBtn" title="上传文件">📎</button>
+          <button type="submit" id="sendBtn">发送</button>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      // ---------- 状态 ----------
+      let conversations = [];
+      let activeConvId = null;
+      let messages = [];
+      let models = [];
+      let defaultModel = '';
+      let currentModel = '';
+
+      // DOM 元素
+      const convListEl = document.getElementById('convList');
+      const messagesEl = document.getElementById('messages');
+      const chatForm = document.getElementById('chatForm');
+      const userInput = document.getElementById('userInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const attachBtn = document.getElementById('attachBtn');
+      const fileInput = document.getElementById('fileInput');
+      const filePreview = document.getElementById('filePreview');
+      const modelBtn = document.getElementById('modelBtn');
+      const modelLabel = document.getElementById('modelLabel');
+      const modelPopover = document.getElementById('modelPopover');
+      const newChatBtn = document.getElementById('newChatBtn');
+      const mobileSidebarBtn = document.getElementById('mobileSidebarBtn');
+      const sidebarClose = document.getElementById('sidebarClose');
+      const sidePanel = document.getElementById('sidePanel');
+      const themeToggle = document.getElementById('themeToggle');
+
+      let attachedFiles = [];
+
+      // ---------- 工具 ----------
+      function api(path, method='GET', body) {
+        const opts = { method, headers: { 'Content-Type': 'application/json' } };
+        if (body) opts.body = JSON.stringify(body);
+        return fetch(path, opts).then(r => r.json());
+      }
+
+      // ---------- 主题 ----------
+      function setTheme(dark) {
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        localStorage.setItem('theme', dark ? 'dark' : 'light');
+      }
+      function toggleTheme() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        setTheme(!isDark);
+      }
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      setTheme(savedTheme === 'dark');
+
+      // ---------- 对话列表渲染 ----------
+      function renderConvList() {
+        convListEl.innerHTML = conversations.map(c => `
+          <div class="conv-item ${c.id === activeConvId ? 'active' : ''}" data-id="${c.id}">
+            <span class="title" title="${escapeHtml(c.title)}">${escapeHtml(c.title)}</span>
+            <span class="actions">
+              <button data-action="pin" title="${c.pinned ? '取消置顶' : '置顶'}">📌</button>
+              <button data-action="delete" title="删除">🗑</button>
+            </span>
+          </div>
+        `).join('') || '<div class="empty-state">暂无对话</div>';
+
+        document.querySelectorAll('.conv-item').forEach(el => {
+          el.addEventListener('click', (e) => {
+            if (e.target.closest('button')) return;
+            selectConversation(el.dataset.id);
+          });
+          el.querySelector('[data-action="pin"]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            pinConversation(el.dataset.id);
+          });
+          el.querySelector('[data-action="delete"]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteConversation(el.dataset.id);
+          });
+        });
+      }
+
+      function renderMessages() {
+        if (!messages.length) {
+          messagesEl.innerHTML = '<div class="empty-state">开始新对话</div>';
+          return;
+        }
+        messagesEl.innerHTML = messages.map(m => {
+          const role = m.role === 'assistant' ? 'assistant' : 'user';
+          const avatar = role === 'assistant' ? 'AI' : 'U';
+          let content = escapeHtml(m.content || '');
+          // 简单的 Markdown 处理（可扩展）
+          content = content.replace(/\n/g, '<br>');
+          const filesHtml = (m.files || []).map(f => `<div class="chip">📄 ${escapeHtml(f.name)}</div>`).join('');
+          const imagesHtml = (m.images || []).map(url => `<img src="${url}" style="max-width:200px; border-radius:8px; margin-top:4px;" />`).join('');
+          return `
+            <div class="message ${role}">
+              <div class="avatar">${avatar}</div>
+              <div class="bubble">${filesHtml}${content}${imagesHtml}</div>
+            </div>
+          `;
+        }).join('');
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // ---------- 对话操作 ----------
+      async function loadConversations() {
+        const data = await api('/api/conversations');
+        conversations = data.conversations || [];
+        activeConvId = data.activeId;
+        messages = data.messages || [];
+        renderConvList();
+        renderMessages();
+      }
+
+      async function newConversation() {
+        const data = await api('/api/conversations/new', 'POST');
+        conversations = data.conversations;
+        activeConvId = data.activeId;
+        messages = data.messages || [];
+        renderConvList();
+        renderMessages();
+      }
+
+      async function selectConversation(id) {
+        const data = await api('/api/conversations/select', 'POST', { conversationId: id });
+        if (data.conversations) {
+          conversations = data.conversations;
+          activeConvId = data.activeId;
+          messages = data.messages || [];
+          renderConvList();
+          renderMessages();
+        }
+      }
+
+      async function pinConversation(id) {
+        const conv = conversations.find(c => c.id === id);
+        const data = await api('/api/conversations/pin', 'POST', { conversationId: id, pinned: !conv.pinned });
+        conversations = data.conversations;
+        activeConvId = data.activeId;
+        renderConvList();
+      }
+
+      async function deleteConversation(id) {
+        if (!confirm('确定删除这个对话？')) return;
+        const data = await api('/api/conversations', 'DELETE', { conversationId: id });
+        if (data.conversations !== undefined) {
+          conversations = data.conversations;
+          activeConvId = data.activeId;
+          messages = data.messages || [];
+          renderConvList();
+          renderMessages();
+        }
+      }
+
+      // ---------- 模型 ----------
+      async function loadModels() {
+        try {
+          const data = await api('/api/models');
+          models = data.models || [];
+          defaultModel = data.defaultModel;
+          currentModel = defaultModel;
+          modelLabel.textContent = currentModel;
+          renderModelPopover();
+        } catch(e) {}
+      }
+
+      function renderModelPopover() {
+        modelPopover.innerHTML = models.map(m => `
+          <button data-model="${m.id}" class="${m.id === currentModel ? 'active' : ''}">${m.name || m.id}</button>
+        `).join('');
+        modelPopover.querySelectorAll('button').forEach(btn => {
+          btn.addEventListener('click', () => {
+            currentModel = btn.dataset.model;
+            modelLabel.textContent = currentModel;
+            modelPopover.classList.add('hidden');
+          });
+        });
+      }
+
+      modelBtn.addEventListener('click', () => modelPopover.classList.toggle('hidden'));
+      document.addEventListener('click', (e) => {
+        if (!modelPopover.contains(e.target) && e.target !== modelBtn) {
+          modelPopover.classList.add('hidden');
+        }
+      });
+
+      // ---------- 文件处理 ----------
+      attachBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', handleFiles);
+      function handleFiles() {
+        const files = Array.from(fileInput.files);
+        files.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const dataUrl = e.target.result;
+            attachedFiles.push({ name: file.name, type: file.type, dataUrl, text: '' });
+            // 如果是文本文件，尝试提取文本内容
+            if (file.type.match(/text|json|javascript|python|css|html|csv/)) {
+              const text = e.target.result.split(',')[1];
+              const decoded = atob(text);
+              attachedFiles[attachedFiles.length-1].text = decoded.substring(0, 60000);
+            }
+            renderFilePreview();
+          };
+          if (file.type.startsWith('image/')) {
+            reader.readAsDataURL(file);
+          } else if (file.type.match(/text|json|javascript|python|css|html|csv|pdf/)) {
+            reader.readAsDataURL(file); // 以 base64 读取
+          } else {
+            reader.readAsDataURL(file);
+          }
+        });
+        fileInput.value = '';
+      }
+
+      function renderFilePreview() {
+        filePreview.innerHTML = attachedFiles.map((f, i) => `
+          <div class="chip">
+            ${f.type.startsWith('image/') ? '🖼' : '📄'} ${escapeHtml(f.name)}
+            <button type="button" data-index="${i}" style="margin-left:4px; color:red;">✕</button>
+          </div>
+        `).join('');
+        filePreview.querySelectorAll('button').forEach(btn => {
+          btn.addEventListener('click', () => {
+            attachedFiles.splice(parseInt(btn.dataset.index), 1);
+            renderFilePreview();
+          });
+        });
+      }
+
+      // ---------- 发送消息 ----------
+      chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = userInput.value.trim();
+        if (!text && attachedFiles.length === 0) return;
+        sendBtn.disabled = true;
+        const userMsg = { role: 'user', content: text, files: attachedFiles };
+        messages.push(userMsg);
+        renderMessages();
+        userInput.value = '';
+        attachedFiles = [];
+        renderFilePreview();
+
+        // 添加 AI 占位
+        messages.push({ role: 'assistant', content: '<span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span>' });
+        renderMessages();
+
+        try {
+          const data = await api('/api/chat', 'POST', {
+            messages: messages.slice(0, -1).map(m => ({ role: m.role, content: m.content, files: m.files })),
+            model: currentModel,
+            conversationId: activeConvId,
+          });
+          // 移除占位
+          messages.pop();
+          const assistantMsg = { role: 'assistant', content: data.reply || '无回复', images: data.images };
+          messages.push(assistantMsg);
+          renderMessages();
+          // 更新对话列表
+          if (data.conversations) {
+            conversations = data.conversations;
+            activeConvId = data.conversationId;
+            renderConvList();
+          }
+        } catch (err) {
+          messages.pop();
+          messages.push({ role: 'assistant', content: '请求失败，请检查后端服务。' });
+          renderMessages();
+        } finally {
+          sendBtn.disabled = false;
+        }
+      });
+
+      // 自适应输入框高度
+      userInput.addEventListener('input', () => {
+        userInput.style.height = 'auto';
+        userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+      });
+
+      // 移动端侧边栏控制
+      mobileSidebarBtn.addEventListener('click', () => sidePanel.classList.add('open'));
+      sidebarClose.addEventListener('click', () => sidePanel.classList.remove('open'));
+      // 点击遮罩关闭（可添加遮罩层）
+
+      // 快捷键 Ctrl+Enter 发送
+      userInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
+          chatForm.dispatchEvent(new Event('submit'));
+        }
+      });
+
+      // 初始化
+      (async () => {
+        await loadModels();
+        await loadConversations();
+      })();
+
+      themeToggle.addEventListener('click', toggleTheme);
+      newChatBtn.addEventListener('click', newConversation);
+    </script>
+  </body>
+  </html>
