@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MinAI - 个人 AI 助手</title>
+    <title>AI - 个人 AI 助手</title>
 
     <!-- CDN: marked.js -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js">
@@ -78,14 +78,12 @@
             letter-spacing: -0.01em;
         }
 
-        /* ============ APP SHELL ============ */
         .app-shell {
             display: flex;
             height: 100vh;
             position: relative;
         }
 
-        /* ============ SIDEBAR ============ */
         .side-panel {
             width: var(--sidebar-width);
             min-width: var(--sidebar-width);
@@ -270,7 +268,6 @@
             display: block;
         }
 
-        /* ============ CHAT PANEL ============ */
         .chat-panel {
             flex: 1;
             display: flex;
@@ -355,7 +352,6 @@
             background: var(--accent-hover);
         }
 
-        /* ============ MESSAGES AREA ============ */
         .messages {
             flex: 1;
             overflow-y: auto;
@@ -375,7 +371,6 @@
             gap: 4px;
         }
 
-        /* ============ MESSAGE ROWS (ChatGPT flat style) ============ */
         .msg-row {
             display: flex;
             gap: 12px;
@@ -440,7 +435,6 @@
         .msg-content p {
             margin: 0 0 8px;
         }
-
         .msg-content p:last-child {
             margin-bottom: 0;
         }
@@ -450,7 +444,6 @@
             margin: 6px 0;
             padding-left: 22px;
         }
-
         .msg-content li {
             margin: 3px 0;
         }
@@ -463,16 +456,9 @@
             font-weight: 600;
             line-height: 1.3;
         }
-
-        .msg-content h1 {
-            font-size: 1.4rem;
-        }
-        .msg-content h2 {
-            font-size: 1.2rem;
-        }
-        .msg-content h3 {
-            font-size: 1.05rem;
-        }
+        .msg-content h1 { font-size: 1.4rem; }
+        .msg-content h2 { font-size: 1.2rem; }
+        .msg-content h3 { font-size: 1.05rem; }
 
         .msg-content blockquote {
             border-left: 3px solid var(--accent);
@@ -488,14 +474,12 @@
             width: 100%;
             font-size: 0.85rem;
         }
-
         .msg-content th,
         .msg-content td {
             border: 1px solid var(--border);
             padding: 8px 12px;
             text-align: left;
         }
-
         .msg-content th {
             background: var(--sidebar);
             font-weight: 600;
@@ -506,7 +490,6 @@
             text-decoration: underline;
             text-underline-offset: 2px;
         }
-
         .msg-content a:hover {
             color: var(--accent-hover);
         }
@@ -517,7 +500,6 @@
             margin: 6px 0;
         }
 
-        /* ============ CODE BLOCKS ============ */
         .msg-content pre {
             background: var(--code-bg);
             border: 1px solid var(--code-border);
@@ -551,7 +533,6 @@
             font-size: 0.9em;
         }
 
-        /* Copy button on code blocks */
         .copy-code-btn {
             position: absolute;
             top: 8px;
@@ -586,7 +567,6 @@
             opacity: 1;
         }
 
-        /* ============ STREAMING CURSOR ============ */
         .streaming-cursor {
             display: inline-block;
             width: 8px;
@@ -599,22 +579,15 @@
         }
 
         @keyframes blink-cursor {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.2;
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
         }
 
-        /* Loading dots */
         .loading-dots {
             display: flex;
             gap: 4px;
             padding: 4px 0;
         }
-
         .loading-dots span {
             width: 7px;
             height: 7px;
@@ -622,28 +595,14 @@
             background: var(--secondary);
             animation: dot-bounce 1.2s infinite ease-in-out;
         }
-
-        .loading-dots span:nth-child(2) {
-            animation-delay: 0.15s;
-        }
-        .loading-dots span:nth-child(3) {
-            animation-delay: 0.3s;
-        }
+        .loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.3s; }
 
         @keyframes dot-bounce {
-            0%,
-            80%,
-            100% {
-                transform: scale(0.6);
-                opacity: 0.4;
-            }
-            40% {
-                transform: scale(1);
-                opacity: 1;
-            }
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
         }
 
-        /* ============ COMPOSER (fixed bottom) ============ */
         .composer {
             position: fixed;
             bottom: 20px;
@@ -722,11 +681,8 @@
             transform: scale(0.93);
         }
 
-        .composer-hint {
-            display: none;
-        }
+        .composer-hint { display: none; }
 
-        /* ============ SETTINGS MODAL ============ */
         .modal-backdrop {
             display: none;
             position: fixed;
@@ -813,33 +769,14 @@
             font-family: var(--font-sans);
         }
 
-        .btn-primary {
-            background: var(--accent);
-            color: #fff;
-        }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
 
-        .btn-primary:hover {
-            background: var(--accent-hover);
-        }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: var(--msg-hover); }
 
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-
-        .btn-outline:hover {
-            background: var(--msg-hover);
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: #fff;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-        }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn-danger:hover { background: #dc2626; }
 
         .provider-selector {
             display: flex;
@@ -860,15 +797,8 @@
             transition: all var(--transition-fast);
         }
 
-        .provider-tab.active {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
-        }
-
-        .provider-tab:hover:not(.active) {
-            background: var(--msg-hover);
-        }
+        .provider-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .provider-tab:hover:not(.active) { background: var(--msg-hover); }
 
         .test-result {
             font-size: 0.8rem;
@@ -878,28 +808,12 @@
             display: none;
         }
 
-        .test-result.success {
-            display: block;
-            background: #d1fae5;
-            color: #065f46;
-        }
+        .test-result.success { display: block; background: #d1fae5; color: #065f46; }
+        .test-result.error { display: block; background: #fee2e2; color: #991b1b; }
 
-        .test-result.error {
-            display: block;
-            background: #fee2e2;
-            color: #991b1b;
-        }
+        .dark .test-result.success { background: #064e3b; color: #a7f3d0; }
+        .dark .test-result.error { background: #7f1d1d; color: #fecaca; }
 
-        .dark .test-result.success {
-            background: #064e3b;
-            color: #a7f3d0;
-        }
-        .dark .test-result.error {
-            background: #7f1d1d;
-            color: #fecaca;
-        }
-
-        /* ============ RESPONSIVE / MOBILE ============ */
         @media (max-width: 768px) {
             .side-panel {
                 position: fixed;
@@ -910,21 +824,9 @@
                 transform: translateX(-100%);
                 box-shadow: none;
             }
-
-            .side-panel.open {
-                transform: translateX(0);
-                box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3);
-            }
-
-            .sidebar-backdrop.visible {
-                display: block;
-                z-index: 50;
-            }
-
-            .mobile-sidebar-btn {
-                display: block;
-            }
-
+            .side-panel.open { transform: translateX(0); box-shadow: 4px 0 30px rgba(0,0,0,0.3); }
+            .sidebar-backdrop.visible { display: block; z-index: 50; }
+            .mobile-sidebar-btn { display: block; }
             .composer {
                 left: 20px;
                 right: 20px;
@@ -935,31 +837,11 @@
                 border-radius: 22px;
                 padding: 8px 12px;
             }
-
-            .messages {
-                padding: 16px 8px 130px;
-            }
-
-            .messages-inner {
-                max-width: 100%;
-            }
-
-            .msg-row {
-                padding: 10px 8px;
-                gap: 8px;
-            }
-
-            .msg-avatar {
-                width: 26px;
-                height: 26px;
-                border-radius: 5px;
-                font-size: 0.65rem;
-            }
-
-            .msg-content {
-                font-size: 0.9rem;
-            }
-
+            .messages { padding: 16px 8px 130px; }
+            .messages-inner { max-width: 100%; }
+            .msg-row { padding: 10px 8px; gap: 8px; }
+            .msg-avatar { width: 26px; height: 26px; border-radius: 5px; font-size: 0.65rem; }
+            .msg-content { font-size: 0.9rem; }
             .settings-modal {
                 width: 100%;
                 max-width: 100vw;
@@ -981,35 +863,17 @@
                 padding: 6px 10px;
                 min-height: 44px;
             }
-
-            .composer textarea {
-                font-size: 0.85rem;
-            }
-
-            .send-btn {
-                width: 28px;
-                height: 28px;
-                min-width: 28px;
-                font-size: 0.85rem;
-            }
-
-            .messages {
-                padding: 12px 4px 120px;
-            }
-
-            .msg-content {
-                font-size: 0.85rem;
-            }
-
-            .settings-modal {
-                padding: 16px;
-            }
+            .composer textarea { font-size: 0.85rem; }
+            .send-btn { width: 28px; height: 28px; min-width: 28px; font-size: 0.85rem; }
+            .messages { padding: 12px 4px 120px; }
+            .msg-content { font-size: 0.85rem; }
+            .settings-modal { padding: 16px; }
         }
     </style>
 </head>
 <body>
     <main class="app-shell" id="appShell">
-        <!-- ========== 侧边栏 ========== -->
+        <!-- 侧边栏 -->
         <aside class="side-panel" id="sidePanel" aria-label="会话列表">
             <div class="brand">
                 <div class="brand-icon">M</div>
@@ -1029,7 +893,7 @@
         </aside>
         <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-        <!-- ========== 聊天区 ========== -->
+        <!-- 聊天区 -->
         <section class="chat-panel" id="chatPanel">
             <header class="chat-header">
                 <button class="mobile-sidebar-btn" id="mobileSidebarButton" title="打开侧栏">☰</button>
@@ -1049,7 +913,7 @@
         </section>
     </main>
 
-    <!-- ========== 设置模态框 ========== -->
+    <!-- 设置模态框 -->
     <div class="modal-backdrop" id="settingsBackdrop">
         <div class="settings-modal" id="settingsModal">
             <h2>API 设置</h2>
@@ -1060,843 +924,735 @@
                     <input type="text" id="settingsModel" list="modelSuggestions" placeholder="例如 gpt-4o-mini">
                     <datalist id="modelSuggestions">
                         <option value="gpt-4o">
-                            <option value="gpt-4o-mini">
-                                <option value="gpt-4-turbo">
-                                    <option value="gpt-4">
-                                        <option value="gpt-3.5-turbo">
-                                            <option value="claude-3-opus">
-                                                <option value="claude-3-sonnet">
-                                                    <option value="claude-3-haiku">
-                                                    </datalist>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="settingsApiKey">API Key</label>
-                                                    <input type="password" id="settingsApiKey" placeholder="输入 API Key">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="settingsApiHost">接口地址</label>
-                                                    <input type="text" id="settingsApiHost" placeholder="https://api.openai.com">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="settingsApiPath">API Path（可选）</label>
-                                                    <input type="text" id="settingsApiPath" placeholder="/v1/chat/completions">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="settingsName">通道名称</label>
-                                                    <input type="text" id="settingsName" placeholder="我的通道">
-                                                </div>
-                                                <div class="test-result" id="testResult"></div>
-                                                <div class="btn-row">
-                                                    <button type="button" class="btn btn-primary" id="saveSettingsBtn">保存</button>
-                                                    <button type="button" class="btn btn-outline" id="testConnectionBtn">测试连接</button>
-                                                    <button type="button" class="btn btn-outline" id="addProviderSettingsBtn">+ 新增通道</button>
-                                                    <button type="button" class="btn btn-danger" id="deleteProviderSettingsBtn" style="margin-left:auto;">删除通道</button>
-                                                </div>
-                                            </div>
-                                            <div class="btn-row" style="margin-top:12px;">
-                                                <button type="button" class="btn btn-outline" id="closeSettingsBtn" style="width:100%;">关闭</button>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <option value="gpt-4o-mini">
+                        <option value="gpt-4-turbo">
+                        <option value="gpt-4">
+                        <option value="gpt-3.5-turbo">
+                        <option value="claude-3-opus">
+                        <option value="claude-3-sonnet">
+                        <option value="claude-3-haiku">
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label for="settingsApiKey">API Key</label>
+                    <input type="password" id="settingsApiKey" placeholder="输入 API Key">
+                </div>
+                <div class="form-group">
+                    <label for="settingsApiHost">接口地址</label>
+                    <input type="text" id="settingsApiHost" placeholder="https://api.openai.com">
+                </div>
+                <div class="form-group">
+                    <label for="settingsApiPath">API Path（可选）</label>
+                    <input type="text" id="settingsApiPath" placeholder="/v1/chat/completions">
+                </div>
+                <div class="form-group">
+                    <label for="settingsName">通道名称</label>
+                    <input type="text" id="settingsName" placeholder="我的通道">
+                </div>
+                <div class="test-result" id="testResult"></div>
+                <div class="btn-row">
+                    <button type="button" class="btn btn-primary" id="saveSettingsBtn">保存</button>
+                    <button type="button" class="btn btn-outline" id="testConnectionBtn">测试连接</button>
+                    <button type="button" class="btn btn-outline" id="addProviderSettingsBtn">+ 新增通道</button>
+                    <button type="button" class="btn btn-danger" id="deleteProviderSettingsBtn" style="margin-left:auto;">删除通道</button>
+                </div>
+            </div>
+            <div class="btn-row" style="margin-top:12px;">
+                <button type="button" class="btn btn-outline" id="closeSettingsBtn" style="width:100%;">关闭</button>
+            </div>
+        </div>
+    </div>
 
-                                    <script>
-                                        (function() {
-                                            // ============ 全局状态 ============
-                                            let currentConversationId = null;
-                                            let conversations = [];
-                                            let providers = [];
-                                            let currentSettingsProviderId = null;
-                                            let messagesState = []; // 当前对话的消息数组
-                                            let isStreaming = false;
-                                            let streamAbortController = null;
+    <script>
+        (function() {
+            // 全局状态
+            let currentConversationId = null;
+            let conversations = [];
+            let providers = [];
+            let currentSettingsProviderId = null;
+            let messagesState = [];
+            let isStreaming = false;
+            let streamAbortController = null;
 
-                                            // ============ DOM 缓存 ============
-                                            const $ = (id) => document.getElementById(id);
-                                            const sidePanel = $('sidePanel');
-                                            const messagesDiv = $('messages');
-                                            const messagesInner = $('messagesInner');
-                                            const userInput = $('userInput');
-                                            const sendButton = $('sendButton');
-                                            const conversationList = $('conversationList');
-                                            const settingsBackdrop = $('settingsBackdrop');
-                                            const settingsModal = $('settingsModal');
-                                            const providerTabs = $('providerTabs');
-                                            const themeToggle = $('themeToggle');
-                                            const sidebarBackdrop = $('sidebarBackdrop');
-                                            const headerTitle = $('headerTitle');
+            const $ = (id) => document.getElementById(id);
+            const sidePanel = $('sidePanel');
+            const messagesDiv = $('messages');
+            const messagesInner = $('messagesInner');
+            const userInput = $('userInput');
+            const sendButton = $('sendButton');
+            const conversationList = $('conversationList');
+            const settingsBackdrop = $('settingsBackdrop');
+            const settingsModal = $('settingsModal');
+            const providerTabs = $('providerTabs');
+            const themeToggle = $('themeToggle');
+            const sidebarBackdrop = $('sidebarBackdrop');
+            const headerTitle = $('headerTitle');
 
-                                            // ============ marked.js 配置 ============
-                                            if (typeof marked !== 'undefined') {
-                                                marked.setOptions({
-                                                    breaks: true,
-                                                    gfm: true,
-                                                });
-                                                // 配置 highlight.js
-                                                if (typeof hljs !== 'undefined') {
-                                                    marked.setOptions({
-                                                        highlight: function(code, lang) {
-                                                            if (lang && hljs.getLanguage(lang)) {
-                                                                try {
-                                                                    return hljs.highlight(code, { language: lang })
-                                                                        .value;
-                                                                } catch (e) {}
-                                                            }
-                                                            try {
-                                                                return hljs.highlightAuto(code).value;
-                                                            } catch (e) {}
-                                                            return code;
-                                                        }
-                                                    });
-                                                }
-                                            }
+            // marked.js 配置
+            if (typeof marked !== 'undefined') {
+                marked.setOptions({
+                    breaks: true,
+                    gfm: true,
+                });
+                if (typeof hljs !== 'undefined') {
+                    marked.setOptions({
+                        highlight: function(code, lang) {
+                            if (lang && hljs.getLanguage(lang)) {
+                                try { return hljs.highlight(code, { language: lang }).value; } catch (e) {}
+                            }
+                            try { return hljs.highlightAuto(code).value; } catch (e) {}
+                            return code;
+                        }
+                    });
+                }
+            }
 
-                                            // ============ API 工具函数 ============
-                                            async function api(url, options = {}) {
-                                                const res = await fetch(url, {
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    ...options,
-                                                });
-                                                return res.json();
-                                            }
+            async function api(url, options = {}) {
+                const res = await fetch(url, {
+                    headers: { 'Content-Type': 'application/json' },
+                    ...options,
+                });
+                return res.json();
+            }
 
-                                            // ============ 初始化 ============
-                                            async function init() {
-                                                await loadConversations();
-                                                await loadProviders();
-                                                bindEvents();
-                                                applyTheme();
-                                                updateSendButton();
-                                            }
+            async function init() {
+                await loadConversations();
+                await loadProviders();
+                bindEvents();
+                applyTheme();
+                updateSendButton();
+            }
 
-                                            // ============ 主题管理 ============
-                                            function applyTheme() {
-                                                const dark = localStorage.getItem('dark') === '1';
-                                                document.documentElement.classList.toggle('dark', dark);
-                                                themeToggle.textContent = dark ? '☀' : '☾';
-                                                // 切换 highlight.js 样式
-                                                const lightCSS = document.getElementById('hljs-light');
-                                                const darkCSS = document.getElementById('hljs-dark');
-                                                if (lightCSS && darkCSS) {
-                                                    lightCSS.disabled = dark;
-                                                    darkCSS.disabled = !dark;
-                                                }
-                                            }
+            function applyTheme() {
+                const dark = localStorage.getItem('dark') === '1';
+                document.documentElement.classList.toggle('dark', dark);
+                themeToggle.textContent = dark ? '☀' : '☾';
+                const lightCSS = document.getElementById('hljs-light');
+                const darkCSS = document.getElementById('hljs-dark');
+                if (lightCSS && darkCSS) {
+                    lightCSS.disabled = dark;
+                    darkCSS.disabled = !dark;
+                }
+            }
 
-                                            themeToggle.addEventListener('click', () => {
-                                                const isDark = !document.documentElement.classList
-                                                    .contains('dark');
-                                                document.documentElement.classList.toggle('dark', isDark);
-                                                localStorage.setItem('dark', isDark ? '1' : '0');
-                                                themeToggle.textContent = isDark ? '☀' : '☾';
-                                                const lightCSS = document.getElementById('hljs-light');
-                                                const darkCSS = document.getElementById('hljs-dark');
-                                                if (lightCSS && darkCSS) {
-                                                    lightCSS.disabled = isDark;
-                                                    darkCSS.disabled = !isDark;
-                                                }
-                                            });
+            themeToggle.addEventListener('click', () => {
+                const isDark = !document.documentElement.classList.contains('dark');
+                document.documentElement.classList.toggle('dark', isDark);
+                localStorage.setItem('dark', isDark ? '1' : '0');
+                themeToggle.textContent = isDark ? '☀' : '☾';
+                const lightCSS = document.getElementById('hljs-light');
+                const darkCSS = document.getElementById('hljs-dark');
+                if (lightCSS && darkCSS) {
+                    lightCSS.disabled = isDark;
+                    darkCSS.disabled = !isDark;
+                }
+            });
 
-                                            // ============ 对话管理 ============
-                                            async function loadConversations() {
-                                                try {
-                                                    const data = await api('/api/conversations');
-                                                    currentConversationId = data.activeId;
-                                                    conversations = data.conversations || [];
-                                                    messagesState = data.messages || [];
-                                                    renderConversationList();
-                                                    renderMessages();
-                                                } catch (e) {
-                                                    console.error('加载对话失败:', e);
-                                                    conversations = [];
-                                                    messagesState = [];
-                                                    renderConversationList();
-                                                    renderMessages();
-                                                }
-                                            }
+            async function loadConversations() {
+                try {
+                    const data = await api('/api/conversations');
+                    currentConversationId = data.activeId;
+                    conversations = data.conversations || [];
+                    messagesState = data.messages || [];
+                    renderConversationList();
+                    renderMessages();
+                } catch (e) {
+                    console.error('加载对话失败:', e);
+                    conversations = [];
+                    messagesState = [];
+                    renderConversationList();
+                    renderMessages();
+                }
+            }
 
-                                            function renderConversationList() {
-                                                conversationList.innerHTML = conversations.map(c => `
-                                                    <div class="conv-item ${c.id === currentConversationId ? 'active' : ''}" data-id="${c.id}">
-                                                        <span class="title">${escapeHtml(c.title || '新对话')}</span>
-                                                        <button class="delete-conv-btn" data-delete-id="${c.id}" title="删除">🗑</button>
-                                                    </div>
-                                                `).join('');
-                                            }
+            function renderConversationList() {
+                conversationList.innerHTML = conversations.map(c => `
+                    <div class="conv-item ${c.id === currentConversationId ? 'active' : ''}" data-id="${c.id}">
+                        <span class="title">${escapeHtml(c.title || '新对话')}</span>
+                        <button class="delete-conv-btn" data-delete-id="${c.id}" title="删除">🗑</button>
+                    </div>
+                `).join('');
+            }
 
-                                            function renderMessages() {
-                                                if (messagesState.length === 0) {
-                                                    messagesInner.innerHTML = `
-                                                        <div style="text-align:center;padding:60px 20px;color:var(--secondary);">
-                                                            <div style="font-size:2rem;margin-bottom:12px;">💬</div>
-                                                            <div style="font-size:1rem;font-weight:500;">开始新的对话</div>
-                                                            <div style="font-size:0.8rem;margin-top:4px;">输入消息与 AI 交流</div>
-                                                        </div>`;
-                                                } else {
-                                                    messagesInner.innerHTML = messagesState.map((msg, idx) => {
-                                                        const role = msg.role;
-                                                        const content = msg.content || '';
-                                                        const rendered = renderMarkdown(content);
-                                                        const avatarHTML = role === 'assistant' ?
-                                                            '<div class="msg-avatar" title="AI">AI</div>' :
-                                                            '<div class="msg-avatar" title="用户">U</div>';
-                                                        return `
-                                                            <div class="msg-row ${role}" data-msg-index="${idx}">
-                                                                ${role === 'assistant' ? avatarHTML : ''}
-                                                                <div class="msg-content">${rendered}</div>
-                                                                ${role === 'user' ? avatarHTML : ''}
-                                                            </div>`;
-                                                    }).join('');
-                                                    // 给代码块添加复制按钮
-                                                    requestAnimationFrame(() => {
-                                                        addCopyButtonsToContainer(messagesInner);
-                                                    });
-                                                }
-                                                scrollToBottom();
-                                            }
+            function renderMessages() {
+                if (messagesState.length === 0) {
+                    messagesInner.innerHTML = `
+                        <div style="text-align:center;padding:60px 20px;color:var(--secondary);">
+                            <div style="font-size:2rem;margin-bottom:12px;">💬</div>
+                            <div style="font-size:1rem;font-weight:500;">开始新的对话</div>
+                            <div style="font-size:0.8rem;margin-top:4px;">输入消息与 AI 交流</div>
+                        </div>`;
+                } else {
+                    messagesInner.innerHTML = messagesState.map((msg, idx) => {
+                        const role = msg.role;
+                        const content = msg.content || '';
+                        const rendered = renderMarkdown(content);
+                        const avatarHTML = role === 'assistant' ?
+                            '<div class="msg-avatar" title="AI">AI</div>' :
+                            '<div class="msg-avatar" title="用户">U</div>';
+                        return `
+                            <div class="msg-row ${role}" data-msg-index="${idx}">
+                                ${role === 'assistant' ? avatarHTML : ''}
+                                <div class="msg-content">${rendered}</div>
+                                ${role === 'user' ? avatarHTML : ''}
+                            </div>`;
+                    }).join('');
+                    requestAnimationFrame(() => {
+                        addCopyButtonsToContainer(messagesInner);
+                    });
+                }
+                scrollToBottom();
+            }
 
-                                            function renderMarkdown(text) {
-                                                if (!text) return '';
-                                                let html;
-                                                if (typeof marked !== 'undefined' && typeof marked.parse ===
-                                                    'function') {
-                                                    html = marked.parse(text);
-                                                } else {
-                                                    // fallback
-                                                    html = escapeHtml(text)
-                                                        .replace(/```(\w+)?\n([\s\S]*?)```/g,
-                                                            (_, lang, code) =>
-                                                            `<pre><code class="language-${lang || ''}">${escapeHtml(code)}</code></pre>`
-                                                            )
-                                                        .replace(/`([^`]+)`/g, '<code>$1</code>')
-                                                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                                        .replace(/\n/g, '<br>');
-                                                }
-                                                // DOMPurify 清理
-                                                if (typeof DOMPurify !== 'undefined') {
-                                                    html = DOMPurify.sanitize(html, {
-                                                        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u',
-                                                            's', 'del', 'a', 'img', 'code', 'pre',
-                                                            'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                                                            'ul', 'ol', 'li', 'blockquote', 'table',
-                                                            'thead', 'tbody', 'tr', 'th', 'td', 'hr',
-                                                            'span', 'div'
-                                                        ],
-                                                        ALLOWED_ATTR: ['href', 'src', 'alt', 'class',
-                                                            'target', 'rel', 'title'
-                                                        ],
-                                                    });
-                                                }
-                                                return html;
-                                            }
+            function renderMarkdown(text) {
+                if (!text) return '';
+                let html;
+                if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+                    html = marked.parse(text);
+                } else {
+                    html = escapeHtml(text)
+                        .replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code class="language-${lang || ''}">${escapeHtml(code)}</code></pre>`)
+                        .replace(/`([^`]+)`/g, '<code>$1</code>')
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\n/g, '<br>');
+                }
+                if (typeof DOMPurify !== 'undefined') {
+                    html = DOMPurify.sanitize(html, {
+                        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'del', 'a', 'img', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'span', 'div'],
+                        ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'target', 'rel', 'title'],
+                    });
+                }
+                return html;
+            }
 
-                                            function addCopyButtonsToContainer(container) {
-                                                container.querySelectorAll('pre').forEach(pre => {
-                                                    if (pre.querySelector('.copy-code-btn')) return;
-                                                    const btn = document.createElement('button');
-                                                    btn.className = 'copy-code-btn';
-                                                    btn.textContent = '复制';
-                                                    btn.addEventListener('click', async (e) => {
-                                                        e.stopPropagation();
-                                                        const codeEl = pre.querySelector('code');
-                                                        const codeText = codeEl ? codeEl
-                                                            .textContent : pre.textContent;
-                                                        try {
-                                                            await navigator.clipboard.writeText(
-                                                                codeText);
-                                                            btn.textContent = '✓ 已复制';
-                                                            btn.classList.add('copied');
-                                                            setTimeout(() => {
-                                                                btn.textContent = '复制';
-                                                                btn.classList.remove(
-                                                                    'copied');
-                                                            }, 2000);
-                                                        } catch {
-                                                            btn.textContent = '失败';
-                                                            setTimeout(() => btn
-                                                                .textContent = '复制',
-                                                                1500);
-                                                        }
-                                                    });
-                                                    pre.style.position = 'relative';
-                                                    pre.appendChild(btn);
-                                                });
-                                            }
+            function addCopyButtonsToContainer(container) {
+                container.querySelectorAll('pre').forEach(pre => {
+                    if (pre.querySelector('.copy-code-btn')) return;
+                    const btn = document.createElement('button');
+                    btn.className = 'copy-code-btn';
+                    btn.textContent = '复制';
+                    btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const codeEl = pre.querySelector('code');
+                        const codeText = codeEl ? codeEl.textContent : pre.textContent;
+                        try {
+                            await navigator.clipboard.writeText(codeText);
+                            btn.textContent = '✓ 已复制';
+                            btn.classList.add('copied');
+                            setTimeout(() => {
+                                btn.textContent = '复制';
+                                btn.classList.remove('copied');
+                            }, 2000);
+                        } catch {
+                            btn.textContent = '失败';
+                            setTimeout(() => btn.textContent = '复制', 1500);
+                        }
+                    });
+                    pre.style.position = 'relative';
+                    pre.appendChild(btn);
+                });
+            }
 
-                                            function scrollToBottom() {
-                                                requestAnimationFrame(() => {
-                                                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                                                });
-                                            }
+            function scrollToBottom() {
+                requestAnimationFrame(() => {
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                });
+            }
 
-                                            function escapeHtml(str) {
-                                                const div = document.createElement('div');
-                                                div.textContent = str;
-                                                return div.innerHTML;
-                                            }
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
 
-                                            // ============ 流式输出模拟 ============
-                                            async function simulateStreamRender(fullText, msgIndex) {
-                                                const msgEl = messagesInner.querySelector(
-                                                    `.msg-row[data-msg-index="${msgIndex}"]`);
-                                                if (!msgEl) return;
-                                                const contentEl = msgEl.querySelector('.msg-content');
-                                                if (!contentEl) return;
+            async function simulateStreamRender(fullText, msgIndex) {
+                const msgEl = messagesInner.querySelector(`.msg-row[data-msg-index="${msgIndex}"]`);
+                if (!msgEl) return;
+                const contentEl = msgEl.querySelector('.msg-content');
+                if (!contentEl) return;
 
-                                                let displayed = '';
-                                                const chars = fullText.split('');
-                                                const totalLen = chars.length;
+                let displayed = '';
+                const chars = fullText.split('');
+                const totalLen = chars.length;
 
-                                                for (let i = 0; i < totalLen; i++) {
-                                                    if (streamAbortController && streamAbortController.signal
-                                                        .aborted) break;
-                                                    displayed += chars[i];
-                                                    // 每3个字符或遇到换行时更新渲染
-                                                    if (i % 3 === 0 || i === totalLen - 1 || chars[i] ===
-                                                        '\n') {
-                                                        const partialHTML = renderMarkdown(displayed);
-                                                        contentEl.innerHTML = partialHTML +
-                                                            '<span class="streaming-cursor"></span>';
-                                                        addCopyButtonsToContainer(contentEl);
-                                                        scrollToBottom();
-                                                    }
-                                                    const delay = 12 + Math.random() * 10;
-                                                    await new Promise(r => setTimeout(r, delay));
-                                                }
+                for (let i = 0; i < totalLen; i++) {
+                    if (streamAbortController && streamAbortController.signal.aborted) break;
+                    displayed += chars[i];
+                    if (i % 3 === 0 || i === totalLen - 1 || chars[i] === '\n') {
+                        const partialHTML = renderMarkdown(displayed);
+                        contentEl.innerHTML = partialHTML + '<span class="streaming-cursor"></span>';
+                        addCopyButtonsToContainer(contentEl);
+                        scrollToBottom();
+                    }
+                    const delay = 12 + Math.random() * 10;
+                    await new Promise(r => setTimeout(r, delay));
+                }
 
-                                                // 最终渲染
-                                                const finalHTML = renderMarkdown(fullText);
-                                                contentEl.innerHTML = finalHTML;
-                                                addCopyButtonsToContainer(contentEl);
-                                                // 移除光标
-                                                const cursor = contentEl.querySelector('.streaming-cursor');
-                                                if (cursor) cursor.remove();
-                                                scrollToBottom();
-                                            }
+                const finalHTML = renderMarkdown(fullText);
+                contentEl.innerHTML = finalHTML;
+                addCopyButtonsToContainer(contentEl);
+                const cursor = contentEl.querySelector('.streaming-cursor');
+                if (cursor) cursor.remove();
+                scrollToBottom();
+            }
 
-                                            // ============ 发送消息 ============
-                                            async function sendMessage(text) {
-                                                if (isStreaming) return;
-                                                if (!text.trim()) return;
+            async function sendMessage(text) {
+                if (isStreaming) return;
+                if (!text.trim()) return;
 
-                                                const userMsg = { role: 'user', content: text };
-                                                messagesState.push(userMsg);
-                                                renderMessages();
-                                                userInput.value = '';
-                                                updateSendButton();
-                                                scrollToBottom();
+                const userMsg = { role: 'user', content: text };
+                messagesState.push(userMsg);
+                renderMessages();
+                userInput.value = '';
+                updateSendButton();
+                scrollToBottom();
 
-                                                // 创建 AI 消息占位
-                                                const aiPlaceholder = { role: 'assistant', content: '' };
-                                                messagesState.push(aiPlaceholder);
-                                                const aiMsgIndex = messagesState.length - 1;
-                                                renderMessages();
-                                                // 在 AI 消息中显示加载动画
-                                                const aiMsgEl = messagesInner.querySelector(
-                                                    `.msg-row[data-msg-index="${aiMsgIndex}"]`);
-                                                if (aiMsgEl) {
-                                                    const contentEl = aiMsgEl.querySelector('.msg-content');
-                                                    if (contentEl) {
-                                                        contentEl.innerHTML =
-                                                            '<div class="loading-dots"><span></span><span></span><span></span></div>';
-                                                    }
-                                                }
-                                                scrollToBottom();
-                                                isStreaming = true;
-                                                streamAbortController = new AbortController();
+                const aiPlaceholder = { role: 'assistant', content: '' };
+                messagesState.push(aiPlaceholder);
+                const aiMsgIndex = messagesState.length - 1;
+                renderMessages();
+                const aiMsgEl = messagesInner.querySelector(`.msg-row[data-msg-index="${aiMsgIndex}"]`);
+                if (aiMsgEl) {
+                    const contentEl = aiMsgEl.querySelector('.msg-content');
+                    if (contentEl) {
+                        contentEl.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+                    }
+                }
+                scrollToBottom();
+                isStreaming = true;
+                streamAbortController = new AbortController();
 
-                                                try {
-                                                    const res = await fetch('/api/chat', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({
-                                                            messages: messagesState.filter(m => m
-                                                                .content !== '' || m.role ===
-                                                                'assistant'),
-                                                            conversationId: currentConversationId,
-                                                        }),
-                                                        signal: streamAbortController.signal,
-                                                    });
+                try {
+                    const res = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            messages: messagesState.filter(m => m.content !== '' || m.role === 'assistant'),
+                            conversationId: currentConversationId,
+                        }),
+                        signal: streamAbortController.signal,
+                    });
 
-                                                    if (!res.ok) throw new Error('API 请求失败: ' + res
-                                                    .status);
+                    if (!res.ok) throw new Error('API 请求失败: ' + res.status);
 
-                                                    const contentType = res.headers.get('content-type') || '';
-                                                    let replyText = '';
+                    const contentType = res.headers.get('content-type') || '';
+                    let replyText = '';
 
-                                                    if (contentType.includes('text/event-stream') || contentType
-                                                        .includes('application/x-ndjson')) {
-                                                        // 真正的流式响应
-                                                        const reader = res.body.getReader();
-                                                        const decoder = new TextDecoder();
-                                                        let buffer = '';
-                                                        while (true) {
-                                                            const { done, value } = await reader.read();
-                                                            if (done) break;
-                                                            buffer += decoder.decode(value, { stream: true });
-                                                            const lines = buffer.split('\n');
-                                                            buffer = lines.pop() || '';
-                                                            for (const line of lines) {
-                                                                if (line.startsWith('data: ')) {
-                                                                    const data = line.slice(6).trim();
-                                                                    if (data === '[DONE]') continue;
-                                                                    try {
-                                                                        const parsed = JSON.parse(data);
-                                                                        const delta = parsed.choices?.[0]
-                                                                            ?.delta?.content || parsed
-                                                                            .content || '';
-                                                                        replyText += delta;
-                                                                        // 更新显示
-                                                                        const partialHTML = renderMarkdown(
-                                                                            replyText);
-                                                                        const el = messagesInner
-                                                                            .querySelector(
-                                                                                `.msg-row[data-msg-index="${aiMsgIndex}"] .msg-content`
-                                                                                );
-                                                                        if (el) {
-                                                                            el.innerHTML =
-                                                                                partialHTML +
-                                                                                '<span class="streaming-cursor"></span>';
-                                                                            addCopyButtonsToContainer(
-                                                                                el);
-                                                                        }
-                                                                        scrollToBottom();
-                                                                    } catch {}
-                                                                }
-                                                            }
-                                                        }
-                                                    } else {
-                                                        // JSON 响应
-                                                        const data = await res.json();
-                                                        if (data.error) throw new Error(data.error);
-                                                        replyText = data.reply || data.content || '';
-                                                        currentConversationId = data.conversationId ||
-                                                            currentConversationId;
-                                                        if (data.conversations) conversations = data
-                                                            .conversations;
-                                                        // 模拟流式
-                                                        await simulateStreamRender(replyText, aiMsgIndex);
-                                                    }
+                    if (contentType.includes('text/event-stream') || contentType.includes('application/x-ndjson')) {
+                        const reader = res.body.getReader();
+                        const decoder = new TextDecoder();
+                        let buffer = '';
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            buffer += decoder.decode(value, { stream: true });
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop() || '';
+                            for (const line of lines) {
+                                if (line.startsWith('data: ')) {
+                                    const data = line.slice(6).trim();
+                                    if (data === '[DONE]') continue;
+                                    try {
+                                        const parsed = JSON.parse(data);
+                                        const delta = parsed.choices?.[0]?.delta?.content || parsed.content || '';
+                                        replyText += delta;
+                                        const el = messagesInner.querySelector(`.msg-row[data-msg-index="${aiMsgIndex}"] .msg-content`);
+                                        if (el) {
+                                            el.innerHTML = renderMarkdown(replyText) + '<span class="streaming-cursor"></span>';
+                                            addCopyButtonsToContainer(el);
+                                        }
+                                        scrollToBottom();
+                                    } catch {}
+                                }
+                            }
+                        }
+                    } else {
+                        const data = await res.json();
+                        if (data.error) throw new Error(data.error);
+                        replyText = data.reply || data.content || '';
+                        currentConversationId = data.conversationId || currentConversationId;
+                        if (data.conversations) conversations = data.conversations;
+                        await simulateStreamRender(replyText, aiMsgIndex);
+                    }
 
-                                                    // 更新状态
-                                                    messagesState[aiMsgIndex].content = replyText;
-                                                    if (currentConversationId) {
-                                                        renderConversationList();
-                                                    }
-                                                } catch (e) {
-                                                    if (e.name === 'AbortError') {
-                                                        messagesState[aiMsgIndex].content =
-                                                            messagesState[aiMsgIndex].content ||
-                                                            '[已中止]';
-                                                    } else {
-                                                        messagesState[aiMsgIndex].content =
-                                                            '❌ 错误: ' + e.message;
-                                                        console.error('发送消息失败:', e);
-                                                    }
-                                                    renderMessages();
-                                                } finally {
-                                                    isStreaming = false;
-                                                    streamAbortController = null;
-                                                    updateSendButton();
-                                                    scrollToBottom();
-                                                }
-                                            }
+                    messagesState[aiMsgIndex].content = replyText;
+                    if (currentConversationId) {
+                        renderConversationList();
+                    }
+                } catch (e) {
+                    if (e.name === 'AbortError') {
+                        messagesState[aiMsgIndex].content = messagesState[aiMsgIndex].content || '[已中止]';
+                    } else {
+                        messagesState[aiMsgIndex].content = '❌ 错误: ' + e.message;
+                        console.error('发送消息失败:', e);
+                    }
+                    renderMessages();
+                } finally {
+                    isStreaming = false;
+                    streamAbortController = null;
+                    updateSendButton();
+                    scrollToBottom();
+                }
+            }
 
-                                            // ============ 事件绑定 ============
-                                            function bindEvents() {
-                                                // 新对话
-                                                $('newChatButton').addEventListener('click', async () => {
-                                                    if (isStreaming) return;
-                                                    try {
-                                                        const data = await api('/api/conversations/new', {
-                                                            method: 'POST'
-                                                        });
-                                                        currentConversationId = data.activeId;
-                                                        conversations = data.conversations || [];
-                                                        messagesState = [];
-                                                        renderConversationList();
-                                                        renderMessages();
-                                                        headerTitle.textContent = 'AI Assistant';
-                                                    } catch (e) {
-                                                        console.error('新建对话失败:', e);
-                                                    }
-                                                });
+            function bindEvents() {
+                $('newChatButton').addEventListener('click', async () => {
+                    if (isStreaming) return;
+                    try {
+                        const data = await api('/api/conversations/new', { method: 'POST' });
+                        currentConversationId = data.activeId;
+                        conversations = data.conversations || [];
+                        messagesState = [];
+                        renderConversationList();
+                        renderMessages();
+                        headerTitle.textContent = 'AI Assistant';
+                    } catch (e) {
+                        console.error('新建对话失败:', e);
+                    }
+                });
 
-                                                // 对话列表点击
-                                                conversationList.addEventListener('click', async (e) => {
-                                                    if (isStreaming) return;
-                                                    const deleteBtn = e.target.closest(
-                                                        '.delete-conv-btn');
-                                                    if (deleteBtn) {
-                                                        e.stopPropagation();
-                                                        const id = deleteBtn.dataset.deleteId;
-                                                        if (confirm('确定删除该对话吗？')) {
-                                                            try {
-                                                                await api('/api/conversations', {
-                                                                    method: 'DELETE',
-                                                                    body: JSON.stringify({
-                                                                        conversationId: id
-                                                                    })
-                                                                });
-                                                                await loadConversations();
-                                                                if (currentConversationId === id) {
-                                                                    messagesState = [];
-                                                                    renderMessages();
-                                                                    headerTitle.textContent =
-                                                                        'AI Assistant';
-                                                                }
-                                                            } catch (err) {
-                                                                console.error('删除失败:', err);
-                                                            }
-                                                        }
-                                                        return;
-                                                    }
-                                                    const item = e.target.closest('.conv-item');
-                                                    if (!item) return;
-                                                    const id = item.dataset.id;
-                                                    if (id === currentConversationId) return;
-                                                    try {
-                                                        const data = await api(
-                                                            '/api/conversations/select', {
-                                                                method: 'POST',
-                                                                body: JSON.stringify({
-                                                                    conversationId: id
-                                                                })
-                                                            });
-                                                        currentConversationId = id;
-                                                        conversations = data.conversations || [];
-                                                        messagesState = data.messages || [];
-                                                        renderConversationList();
-                                                        renderMessages();
-                                                        headerTitle.textContent = conversations.find(c => c
-                                                            .id === id)?.title || 'AI Assistant';
-                                                        // 移动端关闭侧栏
-                                                        closeMobileSidebar();
-                                                    } catch (err) {
-                                                        console.error('切换对话失败:', err);
-                                                    }
-                                                });
+                conversationList.addEventListener('click', async (e) => {
+                    if (isStreaming) return;
+                    const deleteBtn = e.target.closest('.delete-conv-btn');
+                    if (deleteBtn) {
+                        e.stopPropagation();
+                        const id = deleteBtn.dataset.deleteId;
+                        if (confirm('确定删除该对话吗？')) {
+                            try {
+                                await api('/api/conversations', {
+                                    method: 'DELETE',
+                                    body: JSON.stringify({ conversationId: id })
+                                });
+                                await loadConversations();
+                                if (currentConversationId === id) {
+                                    messagesState = [];
+                                    renderMessages();
+                                    headerTitle.textContent = 'AI Assistant';
+                                }
+                            } catch (err) {
+                                console.error('删除失败:', err);
+                            }
+                        }
+                        return;
+                    }
+                    const item = e.target.closest('.conv-item');
+                    if (!item) return;
+                    const id = item.dataset.id;
+                    if (id === currentConversationId) return;
+                    try {
+                        const data = await api('/api/conversations/select', {
+                            method: 'POST',
+                            body: JSON.stringify({ conversationId: id })
+                        });
+                        currentConversationId = id;
+                        conversations = data.conversations || [];
+                        messagesState = data.messages || [];
+                        renderConversationList();
+                        renderMessages();
+                        headerTitle.textContent = conversations.find(c => c.id === id)?.title || 'AI Assistant';
+                        closeMobileSidebar();
+                    } catch (err) {
+                        console.error('切换对话失败:', err);
+                    }
+                });
 
-                                                // 发送消息表单
-                                                $('chatForm').addEventListener('submit', async (e) => {
-                                                    e.preventDefault();
-                                                    const text = userInput.value.trim();
-                                                    if (!text || isStreaming) return;
-                                                    await sendMessage(text);
-                                                });
+                $('chatForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const text = userInput.value.trim();
+                    if (!text || isStreaming) return;
+                    await sendMessage(text);
+                });
 
-                                                // textarea 自动调整高度 & Enter 发送
-                                                userInput.addEventListener('input', () => {
-                                                    autoResizeTextarea();
-                                                    updateSendButton();
-                                                });
-                                                userInput.addEventListener('keydown', (e) => {
-                                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                                        e.preventDefault();
-                                                        const text = userInput.value.trim();
-                                                        if (text && !isStreaming) {
-                                                            sendMessage(text);
-                                                        }
-                                                    }
-                                                });
+                userInput.addEventListener('input', () => {
+                    autoResizeTextarea();
+                    updateSendButton();
+                });
+                userInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        const text = userInput.value.trim();
+                        if (text && !isStreaming) {
+                            sendMessage(text);
+                        }
+                    }
+                });
 
-                                                // 移动端侧栏
-                                                $('mobileSidebarButton').addEventListener('click',
-                                                    openMobileSidebar);
-                                                sidebarBackdrop.addEventListener('click', closeMobileSidebar);
-                                                $('sidebarToggle').addEventListener('click', () => {
-                                                    sidePanel.classList.add('collapsed');
-                                                    sidebarBackdrop.classList.remove('visible');
-                                                });
+                $('mobileSidebarButton').addEventListener('click', openMobileSidebar);
+                sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+                $('sidebarToggle').addEventListener('click', () => {
+                    sidePanel.classList.add('collapsed');
+                    sidebarBackdrop.classList.remove('visible');
+                });
 
-                                                // 设置面板
-                                                $('openSettingsButton').addEventListener('click',
-                                                    openSettings);
-                                                settingsBackdrop.addEventListener('click', closeSettings);
-                                                $('closeSettingsBtn').addEventListener('click', closeSettings);
-                                                $('saveSettingsBtn').addEventListener('click', saveSettings);
-                                                $('testConnectionBtn').addEventListener('click',
-                                                    testConnection);
-                                                $('addProviderSettingsBtn').addEventListener('click',
-                                                    addNewProvider);
-                                                $('deleteProviderSettingsBtn').addEventListener('click',
-                                                    deleteCurrentProvider);
+                // 设置面板相关
+                $('openSettingsButton').addEventListener('click', openSettings);
+                settingsBackdrop.addEventListener('click', (e) => {
+                    // 只有点击背景遮罩本身才关闭，点击内部不关闭
+                    if (e.target === settingsBackdrop) {
+                        closeSettings();
+                    }
+                });
+                // 额外保险：阻止模态框内部点击冒泡到背景
+                settingsModal.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+                $('closeSettingsBtn').addEventListener('click', closeSettings);
+                $('saveSettingsBtn').addEventListener('click', saveSettings);
+                $('testConnectionBtn').addEventListener('click', testConnection);
+                $('addProviderSettingsBtn').addEventListener('click', addNewProvider);
+                $('deleteProviderSettingsBtn').addEventListener('click', deleteCurrentProvider);
 
-                                                // 窗口大小变化时更新输入框位置
-                                                window.addEventListener('resize', () => {
-                                                    updateComposerPosition();
-                                                });
-                                            }
+                window.addEventListener('resize', () => {
+                    updateComposerPosition();
+                });
+            }
 
-                                            function autoResizeTextarea() {
-                                                userInput.style.height = 'auto';
-                                                userInput.style.height = Math.min(userInput.scrollHeight, 180) +
-                                                    'px';
-                                            }
+            function autoResizeTextarea() {
+                userInput.style.height = 'auto';
+                userInput.style.height = Math.min(userInput.scrollHeight, 180) + 'px';
+            }
 
-                                            function updateSendButton() {
-                                                const hasText = userInput.value.trim().length > 0;
-                                                if (hasText && !isStreaming) {
-                                                    sendButton.classList.add('active');
-                                                    sendButton.disabled = false;
-                                                } else if (isStreaming) {
-                                                    sendButton.classList.remove('active');
-                                                    sendButton.disabled = true;
-                                                    sendButton.textContent = '■';
-                                                } else {
-                                                    sendButton.classList.remove('active');
-                                                    sendButton.disabled = true;
-                                                    sendButton.textContent = '➤';
-                                                }
-                                                if (!isStreaming) {
-                                                    sendButton.textContent = '➤';
-                                                }
-                                            }
+            function updateSendButton() {
+                const hasText = userInput.value.trim().length > 0;
+                if (hasText && !isStreaming) {
+                    sendButton.classList.add('active');
+                    sendButton.disabled = false;
+                } else if (isStreaming) {
+                    sendButton.classList.remove('active');
+                    sendButton.disabled = true;
+                    sendButton.textContent = '■';
+                } else {
+                    sendButton.classList.remove('active');
+                    sendButton.disabled = true;
+                    sendButton.textContent = '➤';
+                }
+                if (!isStreaming) {
+                    sendButton.textContent = '➤';
+                }
+            }
 
-                                            function updateComposerPosition() {
-                                                const composer = document.querySelector('.composer');
-                                                if (!composer) return;
-                                                if (window.innerWidth > 768) {
-                                                    const sidebarWidth = sidePanel.classList.contains(
-                                                        'collapsed') ? 0 : 260;
-                                                    composer.style.left = `calc(${sidebarWidth}px + (100vw - ${sidebarWidth}px - 768px) / 2)`;
-                                                    composer.style.maxWidth =
-                                                        `calc(100vw - ${sidebarWidth}px - 40px)`;
-                                                    composer.style.width = '768px';
-                                                } else {
-                                                    composer.style.left = '';
-                                                    composer.style.right = '';
-                                                    composer.style.width = '';
-                                                    composer.style.maxWidth = '768px';
-                                                }
-                                            }
+            function updateComposerPosition() {
+                const composer = document.querySelector('.composer');
+                if (!composer) return;
+                if (window.innerWidth > 768) {
+                    const sidebarWidth = sidePanel.classList.contains('collapsed') ? 0 : 260;
+                    composer.style.left = `calc(${sidebarWidth}px + (100vw - ${sidebarWidth}px - 768px) / 2)`;
+                    composer.style.maxWidth = `calc(100vw - ${sidebarWidth}px - 40px)`;
+                    composer.style.width = '768px';
+                } else {
+                    composer.style.left = '';
+                    composer.style.right = '';
+                    composer.style.width = '';
+                    composer.style.maxWidth = '768px';
+                }
+            }
 
-                                            // ============ 移动端侧栏 ============
-                                            function openMobileSidebar() {
-                                                if (window.innerWidth <= 768) {
-                                                    sidePanel.classList.add('open');
-                                                    sidebarBackdrop.classList.add('visible');
-                                                } else {
-                                                    sidePanel.classList.remove('collapsed');
-                                                }
-                                                updateComposerPosition();
-                                            }
+            function openMobileSidebar() {
+                if (window.innerWidth <= 768) {
+                    sidePanel.classList.add('open');
+                    sidebarBackdrop.classList.add('visible');
+                } else {
+                    sidePanel.classList.remove('collapsed');
+                }
+                updateComposerPosition();
+            }
 
-                                            function closeMobileSidebar() {
-                                                sidePanel.classList.remove('open');
-                                                sidebarBackdrop.classList.remove('visible');
-                                                if (window.innerWidth <= 768) {
-                                                    sidePanel.classList.add('collapsed');
-                                                }
-                                                updateComposerPosition();
-                                            }
+            function closeMobileSidebar() {
+                sidePanel.classList.remove('open');
+                sidebarBackdrop.classList.remove('visible');
+                if (window.innerWidth <= 768) {
+                    sidePanel.classList.add('collapsed');
+                }
+                updateComposerPosition();
+            }
 
-                                            // ============ 设置面板 ============
-                                            async function loadProviders() {
-                                                try {
-                                                    const data = await api('/api/providers');
-                                                    providers = data.providers || [];
-                                                } catch (e) {
-                                                    console.error('加载通道失败:', e);
-                                                    providers = [];
-                                                }
-                                            }
+            async function loadProviders() {
+                try {
+                    const data = await api('/api/providers');
+                    providers = data.providers || [];
+                } catch (e) {
+                    console.error('加载通道失败:', e);
+                    providers = [];
+                }
+            }
 
-                                            function openSettings() {
-                                                renderProviderTabs();
-                                                settingsBackdrop.classList.add('visible');
-                                                if (providers.length > 0 && !currentSettingsProviderId) {
-                                                    currentSettingsProviderId = providers[0].id;
-                                                }
-                                                populateSettingsForm();
-                                            }
+            function openSettings() {
+                renderProviderTabs();
+                settingsBackdrop.classList.add('visible');
+                if (providers.length > 0 && !currentSettingsProviderId) {
+                    currentSettingsProviderId = providers[0].id;
+                }
+                populateSettingsForm();
+            }
 
-                                            function closeSettings() {
-                                                settingsBackdrop.classList.remove('visible');
-                                                $('testResult').style.display = 'none';
-                                            }
+            function closeSettings() {
+                settingsBackdrop.classList.remove('visible');
+                $('testResult').style.display = 'none';
+            }
 
-                                            function renderProviderTabs() {
-                                                if (providers.length === 0) {
-                                                    providerTabs.innerHTML =
-                                                        '<span style="font-size:0.8rem;color:var(--secondary);">暂无通道</span>';
-                                                    currentSettingsProviderId = null;
-                                                    return;
-                                                }
-                                                providerTabs.innerHTML = providers.map(p => `
-                                                    <button class="provider-tab ${p.id === currentSettingsProviderId ? 'active' : ''}" data-pid="${p.id}">
-                                                        ${escapeHtml(p.name || '未命名')}
-                                                    </button>
-                                                `).join('');
-                                                // 绑定点击事件
-                                                providerTabs.querySelectorAll('.provider-tab').forEach(tab => {
-                                                    tab.addEventListener('click', () => {
-                                                        currentSettingsProviderId = tab.dataset
-                                                            .pid;
-                                                        renderProviderTabs();
-                                                        populateSettingsForm();
-                                                        $('testResult').style.display =
-                                                            'none';
-                                                    });
-                                                });
-                                                if (!currentSettingsProviderId && providers.length > 0) {
-                                                    currentSettingsProviderId = providers[0].id;
-                                                    renderProviderTabs();
-                                                }
-                                            }
+            function renderProviderTabs() {
+                if (providers.length === 0) {
+                    providerTabs.innerHTML = '<span style="font-size:0.8rem;color:var(--secondary);">暂无通道</span>';
+                    currentSettingsProviderId = null;
+                    return;
+                }
+                providerTabs.innerHTML = providers.map(p => `
+                    <button class="provider-tab ${p.id === currentSettingsProviderId ? 'active' : ''}" data-pid="${p.id}">
+                        ${escapeHtml(p.name || '未命名')}
+                    </button>
+                `).join('');
+                providerTabs.querySelectorAll('.provider-tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        currentSettingsProviderId = tab.dataset.pid;
+                        renderProviderTabs();
+                        populateSettingsForm();
+                        $('testResult').style.display = 'none';
+                    });
+                });
+                if (!currentSettingsProviderId && providers.length > 0) {
+                    currentSettingsProviderId = providers[0].id;
+                    renderProviderTabs();
+                }
+            }
 
-                                            function populateSettingsForm() {
-                                                const p = providers.find(p => p.id === currentSettingsProviderId);
-                                                if (!p) {
-                                                    $('settingsName').value = '';
-                                                    $('settingsModel').value = '';
-                                                    $('settingsApiKey').value = '';
-                                                    $('settingsApiHost').value = '';
-                                                    $('settingsApiPath').value = '';
-                                                    return;
-                                                }
-                                                $('settingsName').value = p.name || '';
-                                                $('settingsModel').value = p.aiModel || '';
-                                                $('settingsApiKey').value = p.apiKeySet ? '********' : (p.apiKey ||
-                                                    '');
-                                                $('settingsApiHost').value = p.apiHost || '';
-                                                $('settingsApiPath').value = p.apiPath || '';
-                                                $('testResult').style.display = 'none';
-                                            }
+            function populateSettingsForm() {
+                const p = providers.find(p => p.id === currentSettingsProviderId);
+                if (!p) {
+                    $('settingsName').value = '';
+                    $('settingsModel').value = '';
+                    $('settingsApiKey').value = '';
+                    $('settingsApiHost').value = '';
+                    $('settingsApiPath').value = '';
+                    return;
+                }
+                $('settingsName').value = p.name || '';
+                $('settingsModel').value = p.aiModel || '';
+                $('settingsApiKey').value = p.apiKeySet ? '********' : (p.apiKey || '');
+                $('settingsApiHost').value = p.apiHost || '';
+                $('settingsApiPath').value = p.apiPath || '';
+                $('testResult').style.display = 'none';
+            }
 
-                                            async function saveSettings() {
-                                                if (!currentSettingsProviderId) {
-                                                    // 创建新通道
-                                                    const body = {
-                                                        name: $('settingsName').value.trim() || '新通道',
-                                                        apiHost: $('settingsApiHost').value.trim() ||
-                                                            'https://api.openai.com',
-                                                        apiPath: $('settingsApiPath').value.trim() || '',
-                                                        aiModel: $('settingsModel').value.trim() ||
-                                                            'gpt-4o-mini',
-                                                        enabled: true,
-                                                        isDefault: providers.length === 0,
-                                                    };
-                                                    const apiKeyVal = $('settingsApiKey').value;
-                                                    if (apiKeyVal && apiKeyVal !== '********') body.apiKey =
-                                                        apiKeyVal;
-                                                    try {
-                                                        const res = await api('/api/providers', {
-                                                            method: 'POST',
-                                                            body: JSON.stringify(body)
-                                                        });
-                                                        if (res.provider) {
-                                                            await loadProviders();
-                                                            currentSettingsProviderId = res.provider.id;
-                                                            renderProviderTabs();
-                                                            populateSettingsForm();
-                                                            alert('通道已创建');
-                                                        } else {
-                                                            alert('创建失败: ' + (res.error || ''));
-                                                        }
-                                                    } catch (e) {
-                                                        alert('创建失败: ' + e.message);
-                                                    }
-                                                    return;
-                                                }
-                                                const body = {
-                                                    name: $('settingsName').value.trim() || '未命名',
-                                                    apiHost: $('settingsApiHost').value.trim() ||
-                                                        'https://api.openai.com',
-                                                    apiPath: $('settingsApiPath').value.trim() || '',
-                                                    aiModel: $('settingsModel').value.trim() || 'gpt-4o-mini',
-                                                    enabled: true,
-                                                };
-                                                const apiKeyVal = $('settingsApiKey').value;
-                                                if (apiKeyVal && apiKeyVal !== '********') body.apiKey =
-                                                apiKeyVal;
-                                                try {
-                                                    const res = await api(`/api/providers/${currentSettingsProviderId}`, {
-                                                        method: 'PUT',
-                                                        body: JSON.stringify(body)
-                                                    });
-                                                    if (res.provider) {
-                                                        await loadProviders();
-                                                        renderProviderTabs();
-                                                        populateSettingsForm();
-                                                        alert('保存成功');
-                                                    } else {
-                                                        alert('保存失败: ' + (res.error || ''));
-                                                    }
-                                                } catch (e) {
-                                                    alert('保存失败: ' + e.message);
-                                                }
-                                            }
+            async function saveSettings() {
+                if (!currentSettingsProviderId) {
+                    const body = {
+                        name: $('settingsName').value.trim() || '新通道',
+                        apiHost: $('settingsApiHost').value.trim() || 'https://api.openai.com',
+                        apiPath: $('settingsApiPath').value.trim() || '',
+                        aiModel: $('settingsModel').value.trim() || 'gpt-4o-mini',
+                        enabled: true,
+                        isDefault: providers.length === 0,
+                    };
+                    const apiKeyVal = $('settingsApiKey').value;
+                    if (apiKeyVal && apiKeyVal !== '********') body.apiKey = apiKeyVal;
+                    try {
+                        const res = await api('/api/providers', {
+                            method: 'POST',
+                            body: JSON.stringify(body)
+                        });
+                        if (res.provider) {
+                            await loadProviders();
+                            currentSettingsProviderId = res.provider.id;
+                            renderProviderTabs();
+                            populateSettingsForm();
+                            alert('通道已创建');
+                        } else {
+                            alert('创建失败: ' + (res.error || ''));
+                        }
+                    } catch (e) {
+                        alert('创建失败: ' + e.message);
+                    }
+                    return;
+                }
+                const body = {
+                    name: $('settingsName').value.trim() || '未命名',
+                    apiHost: $('settingsApiHost').value.trim() || 'https://api.openai.com',
+                    apiPath: $('settingsApiPath').value.trim() || '',
+                    aiModel: $('settingsModel').value.trim() || 'gpt-4o-mini',
+                    enabled: true,
+                };
+                const apiKeyVal = $('settingsApiKey').value;
+                if (apiKeyVal && apiKeyVal !== '********') body.apiKey = apiKeyVal;
+                try {
+                    const res = await api(`/api/providers/${currentSettingsProviderId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(body)
+                    });
+                    if (res.provider) {
+                        await loadProviders();
+                        renderProviderTabs();
+                        populateSettingsForm();
+                        alert('保存成功');
+                    } else {
+                        alert('保存失败: ' + (res.error || ''));
+                    }
+                } catch (e) {
+                    alert('保存失败: ' + e.message);
+                }
+            }
 
-                                            async function testConnection() {
-                                                const testResult = $('testResult');
-                                                testResult.style.display = 'block';
-                                                testResult.textContent = '正在测试连接…';
-                                                testResult.className = 'test-result';
-                                                try {
-                                                    const res = await api('/api/providers/test', {
-                                                        method: 'POST',
-                                                        body: JSON.stringify({
-                                                            providerId: currentSettingsProviderId,
-                                                            apiHost: $('settingsApiHost').value.trim(),
-                                                            apiKey: $('settingsApiKey').value ===
-                                                                '********' ? null : $(
-                                                                    'settingsApiKey').value,
-                                                            apiPath: $('settingsApiPath').value.trim(),
-                                                            aiModel: $('settingsModel').value.trim(),
-                                                        })
-                                                    });
-                                                    if (res.success || res.ok) {
-                                                        testResult.textContent = '✓ 连接成功！' + (res
-                                                            .message || '');
-                                                        testResult.className = 'test-result success';
-                                                    } else {
-                                                        testResult.textContent = '✗ 连接失败: ' + (res.error ||
-                                                            '未知错误');
-                                                        testResult.className = 'test-result error';
-                                                    }
-                                                } catch (e) {
-                                                    testResult.textContent = '✗ 测试请求失败: ' + e.message;
-                                                    testResult.className = 'test-result error';
-                                                }
-                                            }
+            async function testConnection() {
+                const testResult = $('testResult');
+                testResult.style.display = 'block';
+                testResult.textContent = '正在测试连接…';
+                testResult.className = 'test-result';
+                try {
+                    const res = await api('/api/providers/test', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            providerId: currentSettingsProviderId,
+                            apiHost: $('settingsApiHost').value.trim(),
+                            apiKey: $('settingsApiKey').value === '********' ? null : $('settingsApiKey').value,
+                            apiPath: $('settingsApiPath').value.trim(),
+                            aiModel: $('settingsModel').value.trim(),
+                        })
+                    });
+                    if (res.success || res.ok) {
+                        testResult.textContent = '✓ 连接成功！' + (res.message || '');
+                        testResult.className = 'test-result success';
+                    } else {
+                        testResult.textContent = '✗ 连接失败: ' + (res.error || '未知错误');
+                        testResult.className = 'test-result error';
+                    }
+                } catch (e) {
+                    testResult.textContent = '✗ 测试请求失败: ' + e.message;
+                    testResult.className = 'test-result error';
+                }
+            }
 
-                                            async function addNewProvider() {
-                                                currentSettingsProviderId = null;
-                                                populateSettingsForm();
-                                                $('settingsName').value = '新通道';
-                                                $('settingsModel').value = 'gpt-4o-mini';
-                                                $('settingsApiKey').value = '';
-                                                $('settingsApiHost').value = 'https://api.openai.com';
-                                                $('settingsApiPath').value = '';
-                                                $('testResult').style.display = 'none';
-                                                renderProviderTabs();
-                                            }
+            async function addNewProvider() {
+                currentSettingsProviderId = null;
+                populateSettingsForm();
+                $('settingsName').value = '新通道';
+                $('settingsModel').value = 'gpt-4o-mini';
+                $('settingsApiKey').value = '';
+                $('settingsApiHost').value = 'https://api.openai.com';
+                $('settingsApiPath').value = '';
+                $('testResult').style.display = 'none';
+                renderProviderTabs();
+            }
 
-                                            async function deleteCurrentProvider() {
-                                                if (!currentSettingsProviderId) return;
-                                                if (providers.length <= 1) {
-                                                    alert('至少保留一个通道');
-                                                    return;
-                                                }
-                                                if (!confirm('确定删除该通道吗？此操作不可撤销。')) return;
-                                                try {
-                                                    await api(`/api/providers/${currentSettingsProviderId}`, {
-                                                        method: 'DELETE'
-                                                    });
-                                                    await loadProviders();
-                                                    currentSettingsProviderId = providers.length > 0 ? providers[0]
-                                                        .id : null;
-                                                    renderProviderTabs();
-                                                    populateSettingsForm();
-                                                } catch (e) {
-                                                    alert('删除失败: ' + e.message);
-                                                }
-                                            }
+            async function deleteCurrentProvider() {
+                if (!currentSettingsProviderId) return;
+                if (providers.length <= 1) {
+                    alert('至少保留一个通道');
+                    return;
+                }
+                if (!confirm('确定删除该通道吗？此操作不可撤销。')) return;
+                try {
+                    await api(`/api/providers/${currentSettingsProviderId}`, { method: 'DELETE' });
+                    await loadProviders();
+                    currentSettingsProviderId = providers.length > 0 ? providers[0].id : null;
+                    renderProviderTabs();
+                    populateSettingsForm();
+                } catch (e) {
+                    alert('删除失败: ' + e.message);
+                }
+            }
 
-                                            // ============ 启动 ============
-                                            init();
-                                            updateComposerPosition();
-                                        })();
-                                    </script>
-                                </body>
-                                </html>
+            init();
+            updateComposerPosition();
+        })();
+    </script>
+</body>
+</html>
