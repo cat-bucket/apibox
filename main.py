@@ -12,6 +12,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from functools import lru_cache
 
 ROOT = Path(__file__).resolve().parent
 PUBLIC_DIR = ROOT / "public"
@@ -32,6 +33,16 @@ IMAGE_EXTENSIONS = {
     "image/gif": ".gif",
 }
 
+# -------------------- 静态文件缓存 --------------------
+@lru_cache(maxsize=32)
+def cached_static_file(filepath):
+    """缓存静态文件内容，减少磁盘读取"""
+    try:
+        return filepath.read_bytes()
+    except:
+        return None
+
+# -------------------- 工具函数 --------------------
 def load_env_file():
     env_path = ROOT / ".env"
     if not env_path.exists():
@@ -65,44 +76,10 @@ def clean_text(value, max_length):
 def strip_trailing_slash(value):
     return str(value or "").strip().rstrip("/")
 
-def infer_api_path(api_host):
-    parsed = urllib.parse.urlparse(strip_trailing_slash(api_host))
-    path = parsed.path.rstrip("/")
-    if path.endswith("/chat/completions"):
-        return ""
-    if path.endswith("/v1"):
-        return "/chat/completions"
-    if path in {"", "/"}:
-        return "/v1/chat/completions"
-    return "/chat/completions"
-
-def chat_completions_url(base_url):
-    host = strip_trailing_slash(base_url)
-    if host.endswith("/chat/completions"):
-        return host
-    return f"{host}{infer_api_path(host)}"
-
-def models_url(base_url):
-    endpoint = chat_completions_url(base_url)
-    parsed = urllib.parse.urlparse(endpoint)
-    path = parsed.path.rstrip("/")
-    if path.endswith("/chat/completions"):
-        path = path[: -len("/chat/completions")] + "/models"
-    elif path.endswith("/completions"):
-        path = path[: -len("/completions")] + "/models"
-    else:
-        path = path + "/models"
-    return urllib.parse.urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
-
 def now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
-def looks_like_base64(value):
-    if len(value) < 80 or len(value) % 4 not in (0, 2, 3):
-        return False
-    sample = value[:200].replace("\n", "").replace("\r", "")
-    return all(char.isalnum() or char in "+/=_-" for char in sample)
-
+# -------------------- 图片处理（保留） --------------------
 def detect_image_extension(raw, content_type="", source_url=""):
     mime_type = str(content_type or "").split(";", 1)[0].strip().lower()
     if mime_type in IMAGE_EXTENSIONS:
@@ -174,6 +151,7 @@ def persist_image_url(url):
             return ""
     return ""
 
+# -------------------- 消息标准化 --------------------
 def normalize_messages(messages):
     if not isinstance(messages, list):
         return []
@@ -215,6 +193,7 @@ def normalize_messages(messages):
             normalized.append({"role": role, "content": content})
     return normalized[-16:]
 
+# -------------------- 对话存储 --------------------
 def conversation_messages(messages):
     if not isinstance(messages, list):
         return []
@@ -257,7 +236,6 @@ def conversation_messages(messages):
             })
     return normalized[-40:]
 
-# ---- 对话存储 (无用户) ----
 def read_conversations():
     with CONVERSATIONS_LOCK:
         try:
@@ -406,12 +384,11 @@ def delete_conversation(conversation_id):
     save_conversation_store(store)
     return conversation_payload(store)
 
-# ---- API 通道管理 (简化为单个默认通道，也可多个) ----
+# -------------------- API 通道管理 --------------------
 def list_providers():
     providers = read_json(PROVIDERS_PATH, [])
     if not isinstance(providers, list):
         providers = []
-    # 兼容旧数据
     for p in providers:
         if "apiHost" not in p and "apiBaseUrl" in p:
             p["apiHost"] = p.pop("apiBaseUrl")
@@ -441,6 +418,12 @@ def get_active_provider():
         return None
     default = next((p for p in enabled if p.get("isDefault")), None)
     return default or enabled[0]
+
+def get_provider_by_id(provider_id):
+    for p in list_providers():
+        if p["id"] == provider_id:
+            return p
+    return None
 
 def create_provider(data):
     providers = list_providers()
@@ -492,7 +475,6 @@ def delete_provider(provider_id):
     new_list = [p for p in providers if p.get("id") != provider_id]
     if len(new_list) == len(providers):
         return False
-    # 如果删除的是默认，则设置第一个为默认
     if any(p.get("id") == provider_id and p.get("isDefault") for p in providers):
         if new_list:
             new_list[0]["isDefault"] = True
@@ -519,12 +501,28 @@ def fetch_provider_models(provider):
     except Exception as e:
         raise ValueError(f"获取模型失败: {str(e)}")
 
-# ---- HTTP Handler ----
+def chat_completions_url(base_url):
+    host = strip_trailing_slash(base_url)
+    if host.endswith("/chat/completions"):
+        return host
+    return f"{host}/v1/chat/completions"
+
+def models_url(base_url):
+    endpoint = chat_completions_url(base_url)
+    parsed = urllib.parse.urlparse(endpoint)
+    path = parsed.path.rstrip("/")
+    if path.endswith("/chat/completions"):
+        path = path[: -len("/chat/completions")] + "/models"
+    else:
+        path = path + "/models"
+    return urllib.parse.urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
+
+# -------------------- HTTP Handler --------------------
 class Handler(BaseHTTPRequestHandler):
-    server_version = "MinAI/1.0"
+    server_version = "MinAI/2.0"
 
     def log_message(self, fmt, *args):
-        print("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), fmt % args))
+        print(f"{self.client_address[0]} - {self.log_date_time_string()} {fmt % args}")
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -532,16 +530,9 @@ class Handler(BaseHTTPRequestHandler):
             self.route_api("GET", parsed.path)
             return
         if parsed.path.startswith("/generated/"):
-            self.serve_generated(parsed.path, head_only=False)
+            self.serve_generated(parsed.path)
             return
         self.serve_static(parsed.path)
-
-    def do_HEAD(self):
-        parsed = urllib.parse.urlparse(self.path)
-        if parsed.path.startswith("/generated/"):
-            self.serve_generated(parsed.path, head_only=True)
-            return
-        self.serve_static(parsed.path, head_only=True)
 
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -556,16 +547,18 @@ class Handler(BaseHTTPRequestHandler):
         self.route_api("DELETE", parsed.path)
 
     def route_api(self, method, path):
-        # 聊天和对话接口
-        if method == "GET" and path == "/api/public-config":
-            self.send_json(200, {"siteTitle": "MinAI", "requireLogin": False, "user": None})
-            return
+        # 聊天核心
         if method == "POST" and path == "/api/chat":
             self.handle_chat()
+            return
+        if method == "GET" and path == "/api/public-config":
+            self.send_json(200, {"siteTitle": "MinAI", "requireLogin": False})
             return
         if method == "GET" and path == "/api/models":
             self.handle_models()
             return
+
+        # 对话接口
         if path == "/api/conversations/current":
             if method == "GET":
                 self.handle_get_conversation()
@@ -589,7 +582,7 @@ class Handler(BaseHTTPRequestHandler):
             self.handle_delete_conversation()
             return
 
-        # --------- 新增 API 通道管理 ----------
+        # 通道管理
         if method == "GET" and path == "/api/providers":
             self.send_json(200, {"providers": [public_provider(p) for p in list_providers()]})
             return
@@ -601,10 +594,9 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self.send_json(400, {"error": str(e)})
             return
-        # 单个 provider 操作: /api/providers/{id}
         if path.startswith("/api/providers/"):
             parts = path.split("/")
-            if len(parts) == 4:
+            if len(parts) == 4:  # /api/providers/{id}
                 provider_id = parts[3]
                 if method == "PUT":
                     body = self.read_json_body()
@@ -621,10 +613,9 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     self.send_json(405, {"error": "方法不允许"})
                 return
-            # 获取模型: /api/providers/{id}/models
             if len(parts) == 5 and parts[4] == "models" and method == "GET":
                 provider_id = parts[3]
-                provider = next((p for p in list_providers() if p.get("id") == provider_id), None)
+                provider = get_provider_by_id(provider_id)
                 if not provider:
                     self.send_json(404, {"error": "通道不存在"})
                     return
@@ -634,68 +625,135 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception as e:
                     self.send_json(500, {"error": str(e)})
                 return
+            if len(parts) == 5 and parts[4] == "test" and method == "POST":
+                self.handle_test_provider()
+                return
         self.send_json(404, {"error": "Not found"})
 
-    # 聊天处理（使用动态配置）
+    def handle_test_provider(self):
+        """测试指定通道的连接"""
+        body = self.read_json_body()
+        provider_id = body.get("providerId")
+        provider = None
+        if provider_id:
+            provider = get_provider_by_id(provider_id)
+        if not provider:
+            api_host = strip_trailing_slash(body.get("apiHost", ""))
+            api_key = body.get("apiKey")
+            if not api_host or not api_key:
+                self.send_json(400, {"error": "缺少必要参数"})
+                return
+            provider = {"apiHost": api_host, "apiKey": api_key}
+        try:
+            # 简单测试：请求 models 列表
+            models = fetch_provider_models(provider)
+            self.send_json(200, {"success": True, "models": models[:5]})
+        except Exception as e:
+            self.send_json(500, {"error": str(e)})
+
     def handle_chat(self):
-        provider = get_active_provider()
+        """支持流式与非流式两种模式"""
+        body = self.read_json_body()
+        # 确定使用的 provider
+        provider_id = body.get("providerId")
+        provider = None
+        if provider_id:
+            provider = get_provider_by_id(provider_id)
+        if not provider:
+            provider = get_active_provider()
         if not provider:
             self.send_json(500, {"error": "没有可用的 API 通道，请先在设置中添加。"})
             return
-        body = self.read_json_body()
+
         messages = normalize_messages(body.get("messages"))
         stored_messages = conversation_messages(body.get("messages"))
         if not messages:
             self.send_json(400, {"error": "请输入消息内容。"})
             return
+
         model = body.get("model") or provider["aiModel"]
+        stream = body.get("stream", True)  # 默认开启流式
         system_prompt = os.getenv("SYSTEM_PROMPT", "你是一个专业、简洁、友好的 AI 助手。请优先用中文回答。")
         payload = {
             "model": model,
             "temperature": body.get("temperature", 0.7),
+            "stream": stream,
             "messages": [{"role": "system", "content": system_prompt}] + messages,
         }
         url = chat_completions_url(provider["apiHost"])
         if provider.get("apiPath"):
-            # 如果指定了 apiPath，组合 URL
             url = strip_trailing_slash(provider["apiHost"]) + "/" + provider["apiPath"].lstrip("/")
+
         req = urllib.request.Request(url,
             data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
             headers={
-                "Accept": "application/json",
+                "Accept": "text/event-stream" if stream else "application/json",
                 "Content-Type": "application/json",
                 "Authorization": f'Bearer {provider["apiKey"]}',
             },
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=120) as response:
-                upstream = json.loads(response.read().decode("utf-8"))
-                choice = (upstream.get("choices") or [{}])[0]
-                message = choice.get("message") or {}
-                reply = message.get("content") or "没有收到有效回复。"
-                assistant_msg = {"role": "assistant", "content": reply}
-                conversation_id = body.get("conversationId") or ""
-                result = upsert_conversation(conversation_id, stored_messages + [assistant_msg])
-                self.send_json(200, {
-                    "reply": reply,
-                    "model": upstream.get("model") or model,
-                    "usage": upstream.get("usage"),
-                    "conversationId": result["conversationId"],
-                    "conversations": result["conversations"],
-                })
+            with urllib.request.urlopen(req, timeout=300) as response:
+                if stream:
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/event-stream")
+                    self.send_header("Cache-Control", "no-cache")
+                    self.send_header("Connection", "keep-alive")
+                    self.end_headers()
+                    # 读取流式数据并直接转发
+                    full_reply = ""
+                    while True:
+                        chunk = response.read(1024)
+                        if not chunk:
+                            break
+                        self.wfile.write(chunk)
+                        self.wfile.flush()
+                        # 解析出文本内容用于持久化
+                        try:
+                            decoded = chunk.decode("utf-8")
+                            for line in decoded.split("\n"):
+                                if line.startswith("data: "):
+                                    data_str = line[6:].strip()
+                                    if data_str == "[DONE]":
+                                        continue
+                                    data = json.loads(data_str)
+                                    content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                                    full_reply += content
+                        except:
+                            pass
+                    # 流结束后更新对话存储
+                    if full_reply:
+                        assistant_msg = {"role": "assistant", "content": full_reply}
+                        conversation_id = body.get("conversationId") or ""
+                        result = upsert_conversation(conversation_id, stored_messages + [assistant_msg])
+                        # 发送一个额外的 SSE 事件携带 conversationId (可选)
+                        meta = json.dumps({"conversationId": result["conversationId"], "conversations": result["conversations"]})
+                        self.wfile.write(f"data: {meta}\n\n".encode())
+                        self.wfile.flush()
+                else:
+                    # 非流式模式
+                    upstream = json.loads(response.read().decode("utf-8"))
+                    choice = (upstream.get("choices") or [{}])[0]
+                    message = choice.get("message") or {}
+                    reply = message.get("content") or "没有收到有效回复。"
+                    assistant_msg = {"role": "assistant", "content": reply}
+                    conversation_id = body.get("conversationId") or ""
+                    result = upsert_conversation(conversation_id, stored_messages + [assistant_msg])
+                    self.send_json(200, {
+                        "reply": reply,
+                        "model": upstream.get("model") or model,
+                        "conversationId": result["conversationId"],
+                        "conversations": result["conversations"],
+                    })
         except urllib.error.HTTPError as error:
             error_text = error.read().decode("utf-8", "replace")
             try:
                 error_json = json.loads(error_text)
-            except Exception:
+            except:
                 error_json = {}
-            message = (
-                ((error_json.get("error") or {}).get("message") if isinstance(error_json.get("error"), dict) else None)
-                or error_json.get("message")
-                or f"上游接口请求失败，状态码 {error.code}"
-            )
-            self.send_json(error.code, {"error": message})
+            msg = (error_json.get("error", {}).get("message") or error_json.get("message") or f"上游接口请求失败，状态码 {error.code}")
+            self.send_json(error.code, {"error": msg})
         except Exception as e:
             self.send_json(502, {"error": f"无法连接上游 AI 接口: {str(e)}"})
 
@@ -709,7 +767,7 @@ class Handler(BaseHTTPRequestHandler):
             "models": [{"id": provider["aiModel"], "name": provider["aiModel"]}]
         })
 
-    # 对话方法（同前）
+    # 对话方法（保持原有逻辑）
     def handle_get_conversation(self):
         self.send_json(200, conversation_payload(get_conversation_store()))
     def handle_save_conversation(self):
@@ -748,7 +806,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         self.send_json(200, result)
 
-    # 静态文件 & 图片服务（不变）
+    # 静态文件服务（带内存缓存）
     def serve_static(self, path, head_only=False):
         if path == "/":
             path = "/index.html"
@@ -762,18 +820,23 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
             self.send_json(403, {"error": "Forbidden"})
             return
+
         if not file_path.exists() or not file_path.is_file():
-            requested_suffix = Path(safe_path).suffix
-            if requested_suffix or safe_path.startswith("assets/"):
+            if Path(safe_path).suffix or safe_path.startswith("assets/"):
                 self.send_json(404, {"error": "Not found"})
                 return
             file_path = PUBLIC_DIR / "index.html"
+
+        # 缓存文件内容
+        body = cached_static_file(file_path)
+        if body is None:
+            body = file_path.read_bytes()
         content_type = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
         if file_path.suffix == ".js":
             content_type = "text/javascript"
         if file_path.suffix in {".html", ".css", ".js", ".json"}:
             content_type += "; charset=utf-8"
-        body = file_path.read_bytes()
+
         self.send_response(200)
         self.send_header("Content-Type", content_type)
         cache_control = "no-cache" if file_path.suffix in {".html", ".css", ".js"} else "public, max-age=86400"
@@ -835,7 +898,6 @@ def main():
     if not CONVERSATIONS_PATH.exists():
         write_json(CONVERSATIONS_PATH, {"activeId": "", "items": []})
     if not PROVIDERS_PATH.exists():
-        # 可以尝试从 .env 创建初始通道
         env_host = os.getenv("API_BASE_URL", "")
         env_key = os.getenv("API_KEY", "")
         env_model = os.getenv("AI_MODEL", "gpt-4o-mini")
@@ -854,10 +916,11 @@ def main():
             }])
         else:
             write_json(PROVIDERS_PATH, [])
+
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "3000"))
     server = ThreadingHTTPServer((host, port), Handler)
-    print(f"MinAI running at http://{host}:{port}", flush=True)
+    print(f"MinAI running at http://{host}:{port}")
     server.serve_forever()
 
 if __name__ == "__main__":
