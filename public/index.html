@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MinAI - 个人 AI 助手</title>
 
-    <!-- CDN: marked.js -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- CDN: highlight.js -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css" id="hljs-light">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
     <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/core.min.js"></script>
-    <!-- CDN: DOMPurify -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.0/dist/purify.min.js"></script>
 
     <style>
@@ -53,18 +50,8 @@
             --shadow-composer: 0 2px 24px rgba(0, 0, 0, 0.35);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            font-size: 16px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
         body {
             font-family: var(--font-sans);
             background: var(--background);
@@ -75,11 +62,7 @@
             letter-spacing: -0.01em;
         }
 
-        .app-shell {
-            display: flex;
-            height: 100vh;
-            position: relative;
-        }
+        .app-shell { display: flex; height: 100vh; position: relative; }
 
         .side-panel {
             width: var(--sidebar-width);
@@ -92,10 +75,7 @@
             z-index: 50;
             flex-shrink: 0;
         }
-
-        .side-panel.collapsed {
-            transform: translateX(-100%);
-        }
+        .side-panel.collapsed { transform: translateX(-100%); }
 
         .brand {
             display: flex;
@@ -105,504 +85,204 @@
             border-bottom: 1px solid var(--border);
             min-height: 56px;
         }
-
         .brand-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
+            width: 32px; height: 32px; border-radius: 8px;
             background: var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-weight: 700;
-            font-size: 1rem;
-            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 700; font-size: 1rem; flex-shrink: 0;
         }
-
-        .brand-copy strong {
-            font-size: 1rem;
-            display: block;
-            line-height: 1.2;
-            color: var(--text);
-        }
-
-        .brand-copy small {
-            color: var(--secondary);
-            font-size: 0.7rem;
-            letter-spacing: 0.02em;
-        }
+        .brand-copy strong { font-size: 1rem; display: block; line-height: 1.2; color: var(--text); }
+        .brand-copy small { color: var(--secondary); font-size: 0.7rem; letter-spacing: 0.02em; }
 
         .sidebar-toggle {
-            margin-left: auto;
-            background: none;
-            border: none;
-            color: var(--secondary);
-            font-size: 1.1rem;
-            cursor: pointer;
-            padding: 6px 8px;
-            border-radius: 6px;
-            transition: all var(--transition-fast);
-            line-height: 1;
+            margin-left: auto; background: none; border: none;
+            color: var(--secondary); font-size: 1.1rem; cursor: pointer;
+            padding: 6px 8px; border-radius: 6px;
+            transition: all var(--transition-fast); line-height: 1;
         }
-
-        .sidebar-toggle:hover {
-            color: var(--text);
-            background: var(--msg-hover);
-        }
+        .sidebar-toggle:hover { color: var(--text); background: var(--msg-hover); }
 
         .new-chat-btn {
-            margin: 10px 12px;
-            padding: 10px 14px;
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            font-size: 0.875rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            transition: background var(--transition-fast);
-            letter-spacing: -0.01em;
-            font-family: var(--font-sans);
+            margin: 10px 12px; padding: 10px 14px;
+            background: var(--accent); color: #fff; border: none;
+            border-radius: var(--radius-md); font-weight: 600;
+            font-size: 0.875rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            gap: 6px; transition: background var(--transition-fast);
+            letter-spacing: -0.01em; font-family: var(--font-sans);
         }
+        .new-chat-btn:hover { background: var(--accent-hover); }
+        .new-chat-btn:active { transform: scale(0.97); }
 
-        .new-chat-btn:hover {
-            background: var(--accent-hover);
-        }
-
-        .new-chat-btn:active {
-            transform: scale(0.97);
-        }
-
-        .conversation-section {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0 8px 8px;
-            scroll-behavior: smooth;
-        }
-
+        .conversation-section { flex: 1; overflow-y: auto; padding: 0 8px 8px; scroll-behavior: smooth; }
         .sidebar-label {
-            font-size: 0.7rem;
-            color: var(--secondary);
-            padding: 12px 12px 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 600;
+            font-size: 0.7rem; color: var(--secondary);
+            padding: 12px 12px 6px; text-transform: uppercase;
+            letter-spacing: 0.05em; font-weight: 600;
         }
-
-        .conversation-list {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
+        .conversation-list { display: flex; flex-direction: column; gap: 2px; }
 
         .conv-item {
-            padding: 10px 12px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.85rem;
-            transition: background var(--transition-fast);
-            color: var(--text);
-            gap: 6px;
+            padding: 10px 12px; border-radius: var(--radius-sm);
+            cursor: pointer; display: flex;
+            justify-content: space-between; align-items: center;
+            font-size: 0.85rem; transition: background var(--transition-fast);
+            color: var(--text); gap: 6px;
         }
-
-        .conv-item:hover {
-            background: var(--msg-hover);
-        }
-
-        .conv-item.active {
-            background: var(--border);
-            font-weight: 500;
-        }
-
-        .conv-item .title {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            flex: 1;
-            min-width: 0;
-        }
-
+        .conv-item:hover { background: var(--msg-hover); }
+        .conv-item.active { background: var(--border); font-weight: 500; }
+        .conv-item .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
         .conv-item .delete-conv-btn {
-            background: none;
-            border: none;
-            color: var(--secondary);
-            cursor: pointer;
-            padding: 3px 6px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            opacity: 0;
-            transition: all var(--transition-fast);
-            flex-shrink: 0;
+            background: none; border: none; color: var(--secondary);
+            cursor: pointer; padding: 3px 6px; border-radius: 4px;
+            font-size: 0.8rem; opacity: 0; transition: all var(--transition-fast); flex-shrink: 0;
         }
-
-        .conv-item:hover .delete-conv-btn {
-            opacity: 1;
-        }
-
-        .conv-item .delete-conv-btn:hover {
-            color: #ef4444;
-            background: rgba(239, 68, 68, 0.1);
-        }
+        .conv-item:hover .delete-conv-btn { opacity: 1; }
+        .conv-item .delete-conv-btn:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
 
         .sidebar-backdrop {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.45);
-            z-index: 45;
+            display: none; position: fixed; inset: 0;
+            background: rgba(0, 0, 0, 0.45); z-index: 45;
             transition: opacity var(--transition-smooth);
         }
-
-        .sidebar-backdrop.visible {
-            display: block;
-        }
+        .sidebar-backdrop.visible { display: block; }
 
         .chat-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-            position: relative;
-            background: var(--background);
+            flex: 1; display: flex; flex-direction: column;
+            min-width: 0; position: relative; background: var(--background);
         }
 
         .chat-header {
-            display: flex;
-            align-items: center;
-            padding: 10px 16px;
-            border-bottom: 1px solid var(--border);
-            gap: 10px;
-            min-height: 52px;
-            flex-shrink: 0;
+            display: flex; align-items: center;
+            padding: 10px 16px; border-bottom: 1px solid var(--border);
+            gap: 10px; min-height: 52px; flex-shrink: 0;
         }
-
         .mobile-sidebar-btn {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--text);
-            font-size: 1.4rem;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 6px;
-            transition: background var(--transition-fast);
-            line-height: 1;
+            display: none; background: none; border: none;
+            color: var(--text); font-size: 1.4rem; cursor: pointer;
+            padding: 4px 8px; border-radius: 6px;
+            transition: background var(--transition-fast); line-height: 1;
         }
-
-        .mobile-sidebar-btn:hover {
-            background: var(--msg-hover);
-        }
-
-        .header-title {
-            flex: 1;
-            font-size: 0.95rem;
-            font-weight: 500;
-            color: var(--text);
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .mobile-sidebar-btn:hover { background: var(--msg-hover); }
+        .header-title { flex: 1; font-size: 0.95rem; font-weight: 500; color: var(--text); }
+        .header-actions { display: flex; align-items: center; gap: 6px; }
 
         .icon-btn {
-            background: none;
-            border: none;
-            color: var(--secondary);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 6px 10px;
-            border-radius: 8px;
-            transition: all var(--transition-fast);
-            line-height: 1;
+            background: none; border: none; color: var(--secondary);
+            font-size: 1.2rem; cursor: pointer; padding: 6px 10px;
+            border-radius: 8px; transition: all var(--transition-fast); line-height: 1;
         }
-
-        .icon-btn:hover {
-            color: var(--text);
-            background: var(--msg-hover);
-        }
+        .icon-btn:hover { color: var(--text); background: var(--msg-hover); }
 
         .settings-btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 7px 15px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            font-weight: 500;
+            background: var(--accent); color: #fff; border: none;
+            padding: 7px 15px; border-radius: 20px;
+            font-size: 0.8rem; cursor: pointer; font-weight: 500;
             transition: all var(--transition-fast);
-            font-family: var(--font-sans);
-            letter-spacing: -0.01em;
+            font-family: var(--font-sans); letter-spacing: -0.01em;
         }
-
-        .settings-btn:hover {
-            background: var(--accent-hover);
-        }
+        .settings-btn:hover { background: var(--accent-hover); }
 
         .messages {
-            flex: 1;
-            overflow-y: auto;
+            flex: 1; overflow-y: auto;
             padding: 24px 16px 140px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            display: flex; flex-direction: column; gap: 4px;
             scroll-behavior: smooth;
         }
-
         .messages-inner {
-            max-width: 768px;
-            width: 100%;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            max-width: 768px; width: 100%; margin: 0 auto;
+            display: flex; flex-direction: column; gap: 4px;
         }
 
         .msg-row {
-            display: flex;
-            gap: 12px;
-            padding: 12px 16px;
+            display: flex; gap: 12px; padding: 12px 16px;
             border-radius: var(--radius-sm);
             transition: background var(--transition-fast);
             position: relative;
         }
-
-        .msg-row:hover {
-            background: var(--msg-hover);
-        }
-
-        .msg-row.user {
-            justify-content: flex-end;
-        }
-
-        .msg-row.ai {
-            justify-content: flex-start;
-        }
+        .msg-row:hover { background: var(--msg-hover); }
+        .msg-row.user { justify-content: flex-end; }
+        .msg-row.ai { justify-content: flex-start; }
 
         .msg-avatar {
-            width: 30px;
-            height: 30px;
-            border-radius: 6px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #fff;
-            letter-spacing: 0;
+            width: 30px; height: 30px; border-radius: 6px;
+            flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 600; color: #fff; letter-spacing: 0;
         }
-
-        .msg-row.ai .msg-avatar {
-            background: var(--accent);
-        }
-
-        .msg-row.user .msg-avatar {
-            background: #6b7280;
-            order: 2;
-        }
+        .msg-row.ai .msg-avatar { background: var(--accent); }
+        .msg-row.user .msg-avatar { background: #6b7280; order: 2; }
 
         .msg-content {
-            flex: 1;
-            min-width: 0;
-            max-width: 100%;
-            line-height: 1.7;
-            font-size: 0.9375rem;
-            color: var(--text);
-            word-break: break-word;
-            overflow-wrap: break-word;
+            flex: 1; min-width: 0; max-width: 100%;
+            line-height: 1.7; font-size: 0.9375rem;
+            color: var(--text); word-break: break-word; overflow-wrap: break-word;
         }
+        .msg-row.user .msg-content { text-align: right; order: 1; color: var(--text); }
 
-        .msg-row.user .msg-content {
-            text-align: right;
-            order: 1;
-            color: var(--text);
-        }
-
-        .msg-content p {
-            margin: 0 0 8px;
-        }
-        .msg-content p:last-child {
-            margin-bottom: 0;
-        }
-
-        .msg-content ul,
-        .msg-content ol {
-            margin: 6px 0;
-            padding-left: 22px;
-        }
-        .msg-content li {
-            margin: 3px 0;
-        }
-
-        .msg-content h1,
-        .msg-content h2,
-        .msg-content h3,
-        .msg-content h4 {
-            margin: 14px 0 6px;
-            font-weight: 600;
-            line-height: 1.3;
-        }
+        .msg-content p { margin: 0 0 8px; }
+        .msg-content p:last-child { margin-bottom: 0; }
+        .msg-content ul, .msg-content ol { margin: 6px 0; padding-left: 22px; }
+        .msg-content li { margin: 3px 0; }
+        .msg-content h1, .msg-content h2, .msg-content h3, .msg-content h4 { margin: 14px 0 6px; font-weight: 600; line-height: 1.3; }
         .msg-content h1 { font-size: 1.4rem; }
         .msg-content h2 { font-size: 1.2rem; }
         .msg-content h3 { font-size: 1.05rem; }
-
-        .msg-content blockquote {
-            border-left: 3px solid var(--accent);
-            padding-left: 14px;
-            margin: 8px 0;
-            color: var(--secondary);
-            font-style: italic;
-        }
-
-        .msg-content table {
-            border-collapse: collapse;
-            margin: 8px 0;
-            width: 100%;
-            font-size: 0.85rem;
-        }
-        .msg-content th,
-        .msg-content td {
-            border: 1px solid var(--border);
-            padding: 8px 12px;
-            text-align: left;
-        }
-        .msg-content th {
-            background: var(--sidebar);
-            font-weight: 600;
-        }
-
-        .msg-content a {
-            color: var(--accent);
-            text-decoration: underline;
-            text-underline-offset: 2px;
-        }
-        .msg-content a:hover {
-            color: var(--accent-hover);
-        }
-
-        .msg-content img {
-            max-width: 100%;
-            border-radius: var(--radius-sm);
-            margin: 6px 0;
-        }
-
+        .msg-content blockquote { border-left: 3px solid var(--accent); padding-left: 14px; margin: 8px 0; color: var(--secondary); font-style: italic; }
+        .msg-content table { border-collapse: collapse; margin: 8px 0; width: 100%; font-size: 0.85rem; }
+        .msg-content th, .msg-content td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        .msg-content th { background: var(--sidebar); font-weight: 600; }
+        .msg-content a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+        .msg-content a:hover { color: var(--accent-hover); }
+        .msg-content img { max-width: 100%; border-radius: var(--radius-sm); margin: 6px 0; }
         .msg-content pre {
-            background: var(--code-bg);
-            border: 1px solid var(--code-border);
-            border-radius: var(--radius-md);
-            padding: 14px 16px;
-            overflow-x: auto;
-            margin: 10px 0;
-            font-size: 0.85rem;
-            line-height: 1.55;
-            position: relative;
+            background: var(--code-bg); border: 1px solid var(--code-border);
+            border-radius: var(--radius-md); padding: 14px 16px;
+            overflow-x: auto; margin: 10px 0; font-size: 0.85rem;
+            line-height: 1.55; position: relative;
         }
-
-        .msg-content code {
-            font-family: var(--font-mono);
-            font-size: 0.88em;
+        .msg-content code { font-family: var(--font-mono); font-size: 0.88em; }
+        .msg-content p code, .msg-content li code {
+            background: var(--code-bg); border: 1px solid var(--code-border);
+            padding: 2px 6px; border-radius: 4px; font-size: 0.85em;
         }
-
-        .msg-content p code,
-        .msg-content li code {
-            background: var(--code-bg);
-            border: 1px solid var(--code-border);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.85em;
-        }
-
-        .msg-content pre code {
-            background: none;
-            border: none;
-            padding: 0;
-            font-size: 0.9em;
-        }
+        .msg-content pre code { background: none; border: none; padding: 0; font-size: 0.9em; }
 
         .copy-code-btn {
-            position: absolute;
-            top: 8px;
-            right: 10px;
+            position: absolute; top: 8px; right: 10px;
             background: rgba(128, 128, 128, 0.15);
-            border: 1px solid var(--code-border);
-            color: var(--secondary);
-            padding: 4px 10px;
-            border-radius: 5px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            opacity: 0;
+            border: 1px solid var(--code-border); color: var(--secondary);
+            padding: 4px 10px; border-radius: 5px; font-size: 0.7rem;
+            cursor: pointer; opacity: 0;
             transition: all var(--transition-fast);
-            font-family: var(--font-sans);
-            font-weight: 500;
-            z-index: 2;
+            font-family: var(--font-sans); font-weight: 500; z-index: 2;
         }
-
-        .msg-content pre:hover .copy-code-btn {
-            opacity: 1;
-        }
-
-        .copy-code-btn:hover {
-            background: rgba(128, 128, 128, 0.3);
-            color: var(--text);
-        }
-
-        .copy-code-btn.copied {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
-            opacity: 1;
-        }
+        .msg-content pre:hover .copy-code-btn { opacity: 1; }
+        .copy-code-btn:hover { background: rgba(128, 128, 128, 0.3); color: var(--text); }
+        .copy-code-btn.copied { background: var(--accent); color: #fff; border-color: var(--accent); opacity: 1; }
 
         .streaming-cursor {
-            display: inline-block;
-            width: 8px;
-            height: 16px;
-            background: var(--accent);
-            margin-left: 2px;
-            vertical-align: text-bottom;
-            border-radius: 2px;
+            display: inline-block; width: 8px; height: 16px;
+            background: var(--accent); margin-left: 2px;
+            vertical-align: text-bottom; border-radius: 2px;
             animation: blink-cursor 0.7s infinite;
         }
+        @keyframes blink-cursor { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
 
-        @keyframes blink-cursor {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.2; }
-        }
-
-        .loading-dots {
-            display: flex;
-            gap: 4px;
-            padding: 4px 0;
-        }
+        .loading-dots { display: flex; gap: 4px; padding: 4px 0; }
         .loading-dots span {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
+            width: 7px; height: 7px; border-radius: 50%;
             background: var(--secondary);
             animation: dot-bounce 1.2s infinite ease-in-out;
         }
         .loading-dots span:nth-child(2) { animation-delay: 0.15s; }
         .loading-dots span:nth-child(3) { animation-delay: 0.3s; }
-
         @keyframes dot-bounce {
             0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
             40% { transform: scale(1); opacity: 1; }
         }
 
         .composer {
-            position: fixed;
-            bottom: 20px;
+            position: fixed; bottom: 20px;
             left: calc(var(--sidebar-width) + (100vw - var(--sidebar-width) - 768px) / 2);
             width: 768px;
             max-width: calc(100vw - var(--sidebar-width) - 40px);
@@ -611,333 +291,135 @@
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-composer);
             z-index: 30;
-            display: flex;
-            align-items: flex-end;
-            gap: 8px;
+            display: flex; align-items: flex-end; gap: 8px;
             padding: 10px 14px;
             transition: all var(--transition-smooth);
             min-height: 52px;
         }
-
         .composer:focus-within {
             border-color: var(--accent);
             box-shadow: 0 2px 24px rgba(16, 163, 127, 0.15);
         }
-
         .composer textarea {
-            flex: 1;
-            background: transparent;
-            border: none;
-            resize: none;
-            outline: none;
-            color: var(--text);
-            font-size: 0.9375rem;
-            font-family: var(--font-sans);
-            line-height: 1.5;
-            padding: 4px 0;
-            max-height: 180px;
-            min-height: 24px;
+            flex: 1; background: transparent; border: none;
+            resize: none; outline: none; color: var(--text);
+            font-size: 0.9375rem; font-family: var(--font-sans);
+            line-height: 1.5; padding: 4px 0;
+            max-height: 180px; min-height: 24px;
             letter-spacing: -0.01em;
         }
-
-        .composer textarea::placeholder {
-            color: var(--secondary);
-            opacity: 0.7;
-        }
+        .composer textarea::placeholder { color: var(--secondary); opacity: 0.7; }
 
         .send-btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 50%;
-            width: 34px;
-            height: 34px;
-            min-width: 34px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            flex-shrink: 0;
+            background: var(--accent); color: #fff; border: none;
+            border-radius: 50%; width: 34px; height: 34px;
+            min-width: 34px; display: flex;
+            align-items: center; justify-content: center;
+            cursor: pointer; flex-shrink: 0;
             transition: all var(--transition-fast);
-            font-size: 1rem;
-            opacity: 0.5;
-            pointer-events: none;
+            font-size: 1rem; opacity: 0.5; pointer-events: none;
         }
-
-        .send-btn.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .send-btn.active:hover {
-            background: var(--accent-hover);
-            transform: scale(1.05);
-        }
-
-        .send-btn.active:active {
-            transform: scale(0.93);
-        }
-
-        .composer-hint {
-            display: none;
-        }
+        .send-btn.active { opacity: 1; pointer-events: auto; }
+        .send-btn.active:hover { background: var(--accent-hover); transform: scale(1.05); }
+        .send-btn.active:active { transform: scale(0.93); }
 
         .modal-backdrop {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 90;
-            align-items: center;
-            justify-content: center;
+            display: none; position: fixed; inset: 0;
+            background: rgba(0, 0, 0, 0.5); z-index: 90;
+            align-items: center; justify-content: center;
         }
-
-        .modal-backdrop.visible {
-            display: flex;
-        }
+        .modal-backdrop.visible { display: flex; }
 
         .settings-modal {
-            background: var(--background);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            width: 520px;
-            max-width: calc(100vw - 32px);
-            max-height: 85vh;
+            background: var(--background); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); width: 520px;
+            max-width: calc(100vw - 32px); max-height: 85vh;
             overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-            z-index: 91;
-            padding: 24px;
+            z-index: 91; padding: 24px;
         }
-
-        .settings-modal h2 {
-            font-size: 1.2rem;
-            margin-bottom: 18px;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .settings-modal .form-group {
-            margin-bottom: 14px;
-        }
-
+        .settings-modal h2 { font-size: 1.2rem; margin-bottom: 18px; font-weight: 600; color: var(--text); }
+        .settings-modal .form-group { margin-bottom: 14px; }
         .settings-modal label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--secondary);
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
+            display: block; font-size: 0.8rem; font-weight: 500;
+            color: var(--secondary); margin-bottom: 4px;
+            text-transform: uppercase; letter-spacing: 0.03em;
         }
-
-        .settings-modal input,
-        .settings-modal select {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-            background: var(--sidebar);
-            color: var(--text);
-            font-size: 0.9rem;
-            font-family: var(--font-sans);
-            transition: border var(--transition-fast);
-            outline: none;
+        .settings-modal input, .settings-modal select {
+            width: 100%; padding: 10px 12px;
+            border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--sidebar); color: var(--text);
+            font-size: 0.9rem; font-family: var(--font-sans);
+            transition: border var(--transition-fast); outline: none;
         }
-
-        .settings-modal input:focus,
-        .settings-modal select:focus {
+        .settings-modal input:focus, .settings-modal select:focus {
             border-color: var(--accent);
             box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.1);
         }
-
-        .settings-modal .btn-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 18px;
-            flex-wrap: wrap;
-        }
-
+        .settings-modal .btn-row { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
         .settings-modal .btn {
-            padding: 10px 18px;
-            border-radius: 20px;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 0.85rem;
-            transition: all var(--transition-fast);
-            font-family: var(--font-sans);
+            padding: 10px 18px; border-radius: 20px; border: none;
+            cursor: pointer; font-weight: 500; font-size: 0.85rem;
+            transition: all var(--transition-fast); font-family: var(--font-sans);
         }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: var(--msg-hover); }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn-danger:hover { background: #dc2626; }
 
-        .btn-primary {
-            background: var(--accent);
-            color: #fff;
-        }
-        .btn-primary:hover {
-            background: var(--accent-hover);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-        .btn-outline:hover {
-            background: var(--msg-hover);
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: #fff;
-        }
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-
-        .provider-selector {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
-
+        .provider-selector { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
         .provider-tab {
-            padding: 7px 14px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            background: transparent;
-            color: var(--text);
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-family: var(--font-sans);
-            transition: all var(--transition-fast);
+            padding: 7px 14px; border-radius: 16px;
+            border: 1px solid var(--border); background: transparent;
+            color: var(--text); cursor: pointer; font-size: 0.8rem;
+            font-family: var(--font-sans); transition: all var(--transition-fast);
         }
-
-        .provider-tab.active {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
-        }
-        .provider-tab:hover:not(.active) {
-            background: var(--msg-hover);
-        }
+        .provider-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .provider-tab:hover:not(.active) { background: var(--msg-hover); }
 
         .test-result {
-            font-size: 0.8rem;
-            padding: 6px 10px;
-            border-radius: 6px;
-            margin-top: 6px;
-            display: none;
+            font-size: 0.8rem; padding: 6px 10px; border-radius: 6px;
+            margin-top: 6px; display: none;
         }
+        .test-result.success { display: block; background: #d1fae5; color: #065f46; }
+        .test-result.error { display: block; background: #fee2e2; color: #991b1b; }
+        .dark .test-result.success { background: #064e3b; color: #a7f3d0; }
+        .dark .test-result.error { background: #7f1d1d; color: #fecaca; }
 
-        .test-result.success {
-            display: block;
-            background: #d1fae5;
-            color: #065f46;
+        .error-toast {
+            position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+            background: #fee2e2; color: #991b1b; padding: 12px 20px;
+            border-radius: var(--radius-md); font-size: 0.85rem;
+            z-index: 100; box-shadow: var(--shadow-sm);
+            display: none; max-width: 90vw;
         }
-        .test-result.error {
-            display: block;
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .dark .test-result.success {
-            background: #064e3b;
-            color: #a7f3d0;
-        }
-        .dark .test-result.error {
-            background: #7f1d1d;
-            color: #fecaca;
-        }
+        .dark .error-toast { background: #7f1d1d; color: #fecaca; }
+        .error-toast.visible { display: block; animation: toast-in 0.3s ease; }
+        @keyframes toast-in { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 
         @media (max-width: 768px) {
-            .side-panel {
-                position: fixed;
-                top: 0;
-                left: 0;
-                height: 100vh;
-                z-index: 55;
-                transform: translateX(-100%);
-                box-shadow: none;
-            }
-            .side-panel.open {
-                transform: translateX(0);
-                box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3);
-            }
-            .sidebar-backdrop.visible {
-                display: block;
-                z-index: 50;
-            }
-            .mobile-sidebar-btn {
-                display: block;
-            }
-            .composer {
-                left: 20px;
-                right: 20px;
-                width: auto;
-                max-width: 768px;
-                margin: 0 auto;
-                bottom: 12px;
-                border-radius: 22px;
-                padding: 8px 12px;
-            }
-            .messages {
-                padding: 16px 8px 130px;
-            }
-            .messages-inner {
-                max-width: 100%;
-            }
-            .msg-row {
-                padding: 10px 8px;
-                gap: 8px;
-            }
-            .msg-avatar {
-                width: 26px;
-                height: 26px;
-                border-radius: 5px;
-                font-size: 0.65rem;
-            }
-            .msg-content {
-                font-size: 0.9rem;
-            }
-            .settings-modal {
-                width: 100%;
-                max-width: 100vw;
-                border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-                max-height: 90vh;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-            }
+            .side-panel { position: fixed; top: 0; left: 0; height: 100vh; z-index: 55; transform: translateX(-100%); box-shadow: none; }
+            .side-panel.open { transform: translateX(0); box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3); }
+            .sidebar-backdrop.visible { display: block; z-index: 50; }
+            .mobile-sidebar-btn { display: block; }
+            .composer { left: 20px; right: 20px; width: auto; max-width: 768px; margin: 0 auto; bottom: 12px; border-radius: 22px; padding: 8px 12px; }
+            .messages { padding: 16px 8px 130px; }
+            .messages-inner { max-width: 100%; }
+            .msg-row { padding: 10px 8px; gap: 8px; }
+            .msg-avatar { width: 26px; height: 26px; border-radius: 5px; font-size: 0.65rem; }
+            .msg-content { font-size: 0.9rem; }
+            .settings-modal { width: 100%; max-width: 100vw; border-radius: var(--radius-lg) var(--radius-lg) 0 0; max-height: 90vh; position: fixed; bottom: 0; left: 0; right: 0; }
         }
 
         @media (max-width: 480px) {
-            .composer {
-                left: 8px;
-                right: 8px;
-                bottom: 8px;
-                border-radius: 18px;
-                padding: 6px 10px;
-                min-height: 44px;
-            }
-            .composer textarea {
-                font-size: 0.85rem;
-            }
-            .send-btn {
-                width: 28px;
-                height: 28px;
-                min-width: 28px;
-                font-size: 0.85rem;
-            }
-            .messages {
-                padding: 12px 4px 120px;
-            }
-            .msg-content {
-                font-size: 0.85rem;
-            }
-            .settings-modal {
-                padding: 16px;
-            }
+            .composer { left: 8px; right: 8px; bottom: 8px; border-radius: 18px; padding: 6px 10px; min-height: 44px; }
+            .composer textarea { font-size: 0.85rem; }
+            .send-btn { width: 28px; height: 28px; min-width: 28px; font-size: 0.85rem; }
+            .messages { padding: 12px 4px 120px; }
+            .msg-content { font-size: 0.85rem; }
+            .settings-modal { padding: 16px; }
         }
     </style>
 </head>
@@ -974,10 +456,13 @@
             </div>
             <form class="composer" id="chatForm">
                 <textarea id="userInput" rows="1" placeholder="发送消息…" required></textarea>
-                <button type="submit" class="send-btn" id="sendButton" disabled>➤</button>
+                <!-- FIX: 改为 type="button" 防止表单默认提交 -->
+                <button type="button" class="send-btn" id="sendButton" disabled>➤</button>
             </form>
         </section>
     </main>
+
+    <div class="error-toast" id="errorToast"></div>
 
     <div class="modal-backdrop" id="settingsBackdrop">
         <div class="settings-modal" id="settingsModal">
@@ -1038,6 +523,7 @@
             let messagesState = [];
             let isStreaming = false;
             let streamAbortController = null;
+            let streamTimeoutId = null;
 
             const $ = id => document.getElementById(id);
             const sidePanel = $('sidePanel');
@@ -1052,8 +538,16 @@
             const themeToggle = $('themeToggle');
             const sidebarBackdrop = $('sidebarBackdrop');
             const headerTitle = $('headerTitle');
+            const errorToast = $('errorToast');
 
-            // ---------- API 工具（真实 fetch） ----------
+            // ---------- 错误提示 ----------
+            function showError(msg, duration = 4000) {
+                errorToast.textContent = msg;
+                errorToast.classList.add('visible');
+                setTimeout(() => errorToast.classList.remove('visible'), duration);
+            }
+
+            // ---------- API 工具 ----------
             async function api(url, options = {}) {
                 const res = await fetch(url, {
                     headers: { 'Content-Type': 'application/json' },
@@ -1069,10 +563,7 @@
 
             // ---------- marked.js 配置 ----------
             if (typeof marked !== 'undefined') {
-                marked.setOptions({
-                    breaks: true,
-                    gfm: true,
-                });
+                marked.setOptions({ breaks: true, gfm: true });
                 if (typeof hljs !== 'undefined') {
                     marked.setOptions({
                         highlight: function(code, lang) {
@@ -1088,8 +579,13 @@
 
             // ---------- 初始化 ----------
             async function init() {
-                await loadConversations();
-                await loadProviders();
+                try {
+                    await loadConversations();
+                    await loadProviders();
+                } catch (e) {
+                    showError('初始化失败: ' + e.message);
+                    console.error('初始化失败:', e);
+                }
                 bindEvents();
                 applyTheme();
                 updateSendButton();
@@ -1136,6 +632,7 @@
                     }
                 } catch (e) {
                     console.error('加载对话失败:', e);
+                    showError('加载对话失败: ' + e.message);
                 }
             }
 
@@ -1163,6 +660,7 @@
                     headerTitle.textContent = '新对话';
                 } catch (e) {
                     console.error('新建对话失败:', e);
+                    showError('新建对话失败: ' + e.message);
                 }
             }
 
@@ -1293,7 +791,7 @@
                 scrollToBottom();
             }
 
-            // 发送消息
+            // ---------- 核心修复：发送消息 ----------
             async function sendMessage(text) {
                 if (isStreaming || !text.trim()) return;
                 isStreaming = true;
@@ -1316,6 +814,17 @@
                     aiMsgEl.querySelector('.msg-content').innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
                 }
                 scrollToBottom();
+
+                // 保险：30秒超时强制重置状态
+                streamTimeoutId = setTimeout(() => {
+                    if (isStreaming) {
+                        console.warn('[WARN] 流式响应超时，强制重置状态');
+                        if (streamAbortController) {
+                            try { streamAbortController.abort(); } catch {}
+                        }
+                        finishStream(aiIndex, '⚠️ 响应超时，请重试');
+                    }
+                }, 30000);
 
                 try {
                     const res = await fetch('/api/chat', {
@@ -1340,65 +849,74 @@
                         const reader = res.body.getReader();
                         const decoder = new TextDecoder();
                         let buffer = '';
-                        let streamFinished = false;
+                        let doneReceived = false;
 
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) {
-                                // 处理 buffer 中剩余的最后几行数据
-                                if (buffer.trim()) {
-                                    const lines = buffer.trim().split('\n');
-                                    for (const line of lines) {
-                                        if (line.startsWith('data: ')) {
-                                            const data = line.slice(6).trim();
-                                            if (data === '[DONE]') {
-                                                streamFinished = true;
-                                                continue;
+                        try {
+                            while (true) {
+                                const { done, value } = await reader.read();
+                                if (done) {
+                                    // 处理 buffer 中剩余的最后几行数据
+                                    if (buffer.trim()) {
+                                        const lines = buffer.trim().split('\n');
+                                        for (const line of lines) {
+                                            if (line.startsWith('data: ')) {
+                                                const data = line.slice(6).trim();
+                                                if (data === '[DONE]') {
+                                                    doneReceived = true;
+                                                    continue;
+                                                }
+                                                try {
+                                                    const parsed = JSON.parse(data);
+                                                    const delta = parsed.choices?.[0]?.delta?.content || parsed.content || '';
+                                                    replyText += delta;
+                                                } catch {}
                                             }
-                                            try {
-                                                const parsed = JSON.parse(data);
-                                                const delta = parsed.choices?.[0]?.delta?.content || parsed.content || '';
-                                                replyText += delta;
-                                            } catch {}
                                         }
                                     }
+                                    break;
                                 }
-                                break;
-                            }
 
-                            buffer += decoder.decode(value, { stream: true });
-                            const lines = buffer.split('\n');
-                            buffer = lines.pop() || '';
+                                buffer += decoder.decode(value, { stream: true });
+                                const lines = buffer.split('\n');
+                                buffer = lines.pop() || '';
 
-                            for (const line of lines) {
-                                if (line.startsWith('data: ')) {
-                                    const data = line.slice(6).trim();
-                                    if (data === '[DONE]') {
-                                        streamFinished = true;
-                                        continue;
-                                    }
-                                    try {
-                                        const parsed = JSON.parse(data);
-                                        const delta = parsed.choices?.[0]?.delta?.content || parsed.content || '';
-                                        replyText += delta;
-                                        const el = messagesInner.querySelector(`.msg-row[data-msg-index="${aiIndex}"] .msg-content`);
-                                        if (el) {
-                                            el.innerHTML = renderMarkdown(replyText) + '<span class="streaming-cursor"></span>';
-                                            addCopyButtonsToContainer(el);
+                                for (const line of lines) {
+                                    if (line.startsWith('data: ')) {
+                                        const data = line.slice(6).trim();
+                                        if (data === '[DONE]') {
+                                            doneReceived = true;
+                                            continue;
                                         }
-                                        scrollToBottom();
-                                    } catch {}
+                                        try {
+                                            const parsed = JSON.parse(data);
+                                            const delta = parsed.choices?.[0]?.delta?.content || parsed.content || '';
+                                            replyText += delta;
+                                            const el = messagesInner.querySelector(`.msg-row[data-msg-index="${aiIndex}"] .msg-content`);
+                                            if (el) {
+                                                el.innerHTML = renderMarkdown(replyText) + '<span class="streaming-cursor"></span>';
+                                                addCopyButtonsToContainer(el);
+                                            }
+                                            scrollToBottom();
+                                        } catch {}
+                                    }
+                                }
+
+                                // 收到 [DONE] 后，继续读取一行确保没有更多数据
+                                if (doneReceived) {
+                                    // 再读一次，给后端发送剩余数据的机会
+                                    const { done: d2, value: v2 } = await reader.read();
+                                    if (d2) break;
+                                    if (v2) {
+                                        const extra = decoder.decode(v2, { stream: false });
+                                        // 忽略额外数据，直接结束
+                                    }
+                                    break;
                                 }
                             }
-
-                            // 保险：收到 [DONE] 后再读一次确保没有更多数据，避免后端 keep-alive 导致挂起
-                            if (streamFinished) {
-                                // 给后端一点时间发送剩余数据，然后强制结束
-                                await new Promise(r => setTimeout(r, 100));
-                                try { reader.cancel(); } catch {}
-                                break;
-                            }
+                        } finally {
+                            try { reader.cancel(); } catch {}
                         }
+
                         messagesState[aiIndex].content = replyText;
                     } else {
                         const data = await res.json();
@@ -1418,35 +936,59 @@
                         messagesState[aiIndex].content = messagesState[aiIndex].content || '[已中止]';
                     } else {
                         messagesState[aiIndex].content = '❌ 错误: ' + e.message;
+                        showError(e.message);
                     }
                 } finally {
-                    isStreaming = false;
-                    streamAbortController = null;
-                    renderMessages();
-                    removeAllCursors();
-                    updateSendButton();
-                    scrollToBottom();
-                    userInput.focus();
+                    finishStream(aiIndex);
                 }
             }
 
+            // 提取的完成流式处理函数
+            function finishStream(aiIndex, overrideContent) {
+                if (streamTimeoutId) {
+                    clearTimeout(streamTimeoutId);
+                    streamTimeoutId = null;
+                }
+                isStreaming = false;
+                streamAbortController = null;
+                if (overrideContent && messagesState[aiIndex]) {
+                    messagesState[aiIndex].content = overrideContent;
+                }
+                renderMessages();
+                removeAllCursors();
+                updateSendButton();
+                scrollToBottom();
+                userInput.focus();
+            }
+
+            // ---------- 核心修复：更新发送按钮 ----------
             function updateSendButton() {
                 const hasText = userInput.value.trim().length > 0;
                 if (isStreaming) {
+                    // 停止状态：显示方块，点击停止
                     sendButton.classList.add('active');
-                    sendButton.disabled = false; // 允许点击停止
+                    sendButton.disabled = false;
                     sendButton.textContent = '■';
-                    sendButton.onclick = () => {
+                    // 移除旧的点击事件，绑定停止
+                    sendButton.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         if (streamAbortController) {
                             streamAbortController.abort();
                         }
                     };
                 } else if (hasText) {
+                    // 可发送状态
                     sendButton.classList.add('active');
                     sendButton.disabled = false;
                     sendButton.textContent = '➤';
-                    sendButton.onclick = null;
+                    sendButton.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        sendMessage(userInput.value);
+                    };
                 } else {
+                    // 禁用状态
                     sendButton.classList.remove('active');
                     sendButton.disabled = true;
                     sendButton.textContent = '➤';
@@ -1476,7 +1018,7 @@
             }
 
             function openMobileSidebar() {
-                if (window.innerWidth <=                 if (window.innerWidth <= 768) {
+                if (window.innerWidth <= 768) {
                     sidePanel.classList.add('open');
                     sidebarBackdrop.classList.add('visible');
                 } else {
@@ -1492,13 +1034,14 @@
                 updateComposerPosition();
             }
 
-            // 设置面板
+            // ---------- 设置面板 ----------
             async function loadProviders() {
                 try {
                     const data = await api('/api/providers');
                     providers = data.providers || [];
                 } catch (e) {
                     providers = [];
+                    showError('加载通道失败: ' + e.message);
                 }
             }
 
@@ -1570,26 +1113,44 @@
                 const apiKeyVal = $('settingsApiKey').value;
                 if (apiKeyVal && apiKeyVal !== '••••••••') body.apiKey = apiKeyVal;
 
+                // 前端验证
+                if (!body.apiHost.startsWith('http://') && !body.apiHost.startsWith('https://')) {
+                    showError('接口地址必须以 http:// 或 https:// 开头');
+                    return;
+                }
+                if (!body.apiKey && !providers.find(p => p.id === currentSettingsProviderId)?.apiKeySet) {
+                    showError('请输入 API Key');
+                    return;
+                }
+
                 if (!currentSettingsProviderId) {
-                    const res = await api('/api/providers', { method: 'POST', body: JSON.stringify(body) });
-                    if (res.provider) {
-                        await loadProviders();
-                        currentSettingsProviderId = res.provider.id;
-                        renderProviderTabs();
-                        populateSettingsForm();
-                        alert('通道已创建');
-                    } else {
-                        alert('创建失败: ' + (res.error || ''));
+                    try {
+                        const res = await api('/api/providers', { method: 'POST', body: JSON.stringify(body) });
+                        if (res.provider) {
+                            await loadProviders();
+                            currentSettingsProviderId = res.provider.id;
+                            renderProviderTabs();
+                            populateSettingsForm();
+                            showError('通道已创建', 2000);
+                        } else {
+                            showError('创建失败: ' + (res.error || '未知错误'));
+                        }
+                    } catch (e) {
+                        showError('创建失败: ' + e.message);
                     }
                 } else {
-                    const res = await api(`/api/providers/${currentSettingsProviderId}`, { method: 'PUT', body: JSON.stringify(body) });
-                    if (res.provider) {
-                        await loadProviders();
-                        renderProviderTabs();
-                        populateSettingsForm();
-                        alert('保存成功');
-                    } else {
-                        alert('保存失败: ' + (res.error || ''));
+                    try {
+                        const res = await api(`/api/providers/${currentSettingsProviderId}`, { method: 'PUT', body: JSON.stringify(body) });
+                        if (res.provider) {
+                            await loadProviders();
+                            renderProviderTabs();
+                            populateSettingsForm();
+                            showError('保存成功', 2000);
+                        } else {
+                            showError('保存失败: ' + (res.error || '未知错误'));
+                        }
+                    } catch (e) {
+                        showError('保存失败: ' + e.message);
                     }
                 }
             }
@@ -1599,15 +1160,29 @@
                 testResult.style.display = 'block';
                 testResult.textContent = '正在测试连接…';
                 testResult.className = 'test-result';
+
+                const apiHost = $('settingsApiHost').value.trim();
+                const apiKey = $('settingsApiKey').value;
+                const apiPath = $('settingsApiPath').value.trim();
+                const aiModel = $('settingsModel').value.trim();
+
+                // 前端验证
+                if (!apiHost.startsWith('http://') && !apiHost.startsWith('https://')) {
+                    testResult.textContent = '✗ 接口地址格式错误';
+                    testResult.className = 'test-result error';
+                    return;
+                }
+
                 try {
-                    const res = await api('/api/providers/test', {
+                    // FIX: 使用正确的测试连接端点
+                    const res = await api('/api/providers/test-connection', {
                         method: 'POST',
                         body: JSON.stringify({
                             providerId: currentSettingsProviderId,
-                            apiHost: $('settingsApiHost').value.trim(),
-                            apiKey: $('settingsApiKey').value === '••••••••' ? null : $('settingsApiKey').value,
-                            apiPath: $('settingsApiPath').value.trim(),
-                            aiModel: $('settingsModel').value.trim(),
+                            apiHost: apiHost,
+                            apiKey: apiKey === '••••••••' ? null : apiKey,
+                            apiPath: apiPath,
+                            aiModel: aiModel,
                         })
                     });
                     if (res.success || res.ok) {
@@ -1638,18 +1213,22 @@
             async function deleteCurrentProvider() {
                 if (!currentSettingsProviderId) return;
                 if (providers.length <= 1) {
-                    alert('至少保留一个通道');
+                    showError('至少保留一个通道');
                     return;
                 }
                 if (!confirm('确定删除该通道吗？')) return;
-                await api(`/api/providers/${currentSettingsProviderId}`, { method: 'DELETE' });
-                await loadProviders();
-                currentSettingsProviderId = providers.length > 0 ? providers[0].id : null;
-                renderProviderTabs();
-                populateSettingsForm();
+                try {
+                    await api(`/api/providers/${currentSettingsProviderId}`, { method: 'DELETE' });
+                    await loadProviders();
+                    currentSettingsProviderId = providers.length > 0 ? providers[0].id : null;
+                    renderProviderTabs();
+                    populateSettingsForm();
+                } catch (e) {
+                    showError('删除失败: ' + e.message);
+                }
             }
 
-            // 事件绑定
+            // ---------- 事件绑定 ----------
             function bindEvents() {
                 $('newChatButton').addEventListener('click', async () => {
                     if (isStreaming) return;
@@ -1678,7 +1257,7 @@
                             renderMessages();
                         } catch (err) {
                             console.error('删除失败:', err);
-                            alert('删除失败: ' + err.message);
+                            showError('删除失败: ' + err.message);
                         }
                         return;
                     }
@@ -1699,12 +1278,16 @@
                         closeMobileSidebar();
                     } catch (err) {
                         console.error('切换对话失败:', err);
+                        showError('切换对话失败: ' + err.message);
                     }
                 });
 
+                // FIX: 表单提交绑定到 sendMessage
                 $('chatForm').addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    await sendMessage(userInput.value);
+                    if (!isStreaming) {
+                        await sendMessage(userInput.value);
+                    }
                 });
 
                 userInput.addEventListener('input', () => {
@@ -1715,7 +1298,9 @@
                 userInput.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        sendMessage(userInput.value);
+                        if (!isStreaming) {
+                            sendMessage(userInput.value);
+                        }
                     }
                 });
 
