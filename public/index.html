@@ -81,7 +81,6 @@
             position: relative;
         }
 
-        /* 侧边栏 */
         .side-panel {
             width: var(--sidebar-width);
             min-width: var(--sidebar-width);
@@ -266,7 +265,6 @@
             display: block;
         }
 
-        /* 聊天区 */
         .chat-panel {
             flex: 1;
             display: flex;
@@ -602,7 +600,6 @@
             40% { transform: scale(1); opacity: 1; }
         }
 
-        /* 输入框 */
         .composer {
             position: fixed;
             bottom: 20px;
@@ -681,11 +678,8 @@
             transform: scale(0.93);
         }
 
-        .composer-hint {
-            display: none;
-        }
+        .composer-hint { display: none; }
 
-        /* 设置面板 */
         .modal-backdrop {
             display: none;
             position: fixed;
@@ -772,30 +766,14 @@
             font-family: var(--font-sans);
         }
 
-        .btn-primary {
-            background: var(--accent);
-            color: #fff;
-        }
-        .btn-primary:hover {
-            background: var(--accent-hover);
-        }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
 
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-        .btn-outline:hover {
-            background: var(--msg-hover);
-        }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: var(--msg-hover); }
 
-        .btn-danger {
-            background: #ef4444;
-            color: #fff;
-        }
-        .btn-danger:hover {
-            background: #dc2626;
-        }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn-danger:hover { background: #dc2626; }
 
         .provider-selector {
             display: flex;
@@ -816,14 +794,8 @@
             transition: all var(--transition-fast);
         }
 
-        .provider-tab.active {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
-        }
-        .provider-tab:hover:not(.active) {
-            background: var(--msg-hover);
-        }
+        .provider-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .provider-tab:hover:not(.active) { background: var(--msg-hover); }
 
         .test-result {
             font-size: 0.8rem;
@@ -833,27 +805,12 @@
             display: none;
         }
 
-        .test-result.success {
-            display: block;
-            background: #d1fae5;
-            color: #065f46;
-        }
-        .test-result.error {
-            display: block;
-            background: #fee2e2;
-            color: #991b1b;
-        }
+        .test-result.success { display: block; background: #d1fae5; color: #065f46; }
+        .test-result.error { display: block; background: #fee2e2; color: #991b1b; }
 
-        .dark .test-result.success {
-            background: #064e3b;
-            color: #a7f3d0;
-        }
-        .dark .test-result.error {
-            background: #7f1d1d;
-            color: #fecaca;
-        }
+        .dark .test-result.success { background: #064e3b; color: #a7f3d0; }
+        .dark .test-result.error { background: #7f1d1d; color: #fecaca; }
 
-        /* 移动端适配 */
         @media (max-width: 768px) {
             .side-panel {
                 position: fixed;
@@ -864,17 +821,9 @@
                 transform: translateX(-100%);
                 box-shadow: none;
             }
-            .side-panel.open {
-                transform: translateX(0);
-                box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3);
-            }
-            .sidebar-backdrop.visible {
-                display: block;
-                z-index: 50;
-            }
-            .mobile-sidebar-btn {
-                display: block;
-            }
+            .side-panel.open { transform: translateX(0); box-shadow: 4px 0 30px rgba(0,0,0,0.3); }
+            .sidebar-backdrop.visible { display: block; z-index: 50; }
+            .mobile-sidebar-btn { display: block; }
             .composer {
                 left: 20px;
                 right: 20px;
@@ -885,25 +834,11 @@
                 border-radius: 22px;
                 padding: 8px 12px;
             }
-            .messages {
-                padding: 16px 8px 130px;
-            }
-            .messages-inner {
-                max-width: 100%;
-            }
-            .msg-row {
-                padding: 10px 8px;
-                gap: 8px;
-            }
-            .msg-avatar {
-                width: 26px;
-                height: 26px;
-                border-radius: 5px;
-                font-size: 0.65rem;
-            }
-            .msg-content {
-                font-size: 0.9rem;
-            }
+            .messages { padding: 16px 8px 130px; }
+            .messages-inner { max-width: 100%; }
+            .msg-row { padding: 10px 8px; gap: 8px; }
+            .msg-avatar { width: 26px; height: 26px; border-radius: 5px; font-size: 0.65rem; }
+            .msg-content { font-size: 0.9rem; }
             .settings-modal {
                 width: 100%;
                 max-width: 100vw;
@@ -925,24 +860,11 @@
                 padding: 6px 10px;
                 min-height: 44px;
             }
-            .composer textarea {
-                font-size: 0.85rem;
-            }
-            .send-btn {
-                width: 28px;
-                height: 28px;
-                min-width: 28px;
-                font-size: 0.85rem;
-            }
-            .messages {
-                padding: 12px 4px 120px;
-            }
-            .msg-content {
-                font-size: 0.85rem;
-            }
-            .settings-modal {
-                padding: 16px;
-            }
+            .composer textarea { font-size: 0.85rem; }
+            .send-btn { width: 28px; height: 28px; min-width: 28px; font-size: 0.85rem; }
+            .messages { padding: 12px 4px 120px; }
+            .msg-content { font-size: 0.85rem; }
+            .settings-modal { padding: 16px; }
         }
     </style>
 </head>
@@ -952,8 +874,8 @@
             <div class="brand">
                 <div class="brand-icon">M</div>
                 <div class="brand-copy">
-                    <strong>MinAI</strong>
-                    <small>个人助手</small>
+                    <strong>AI</strong>
+                    <small>助手</small>
                 </div>
                 <button class="sidebar-toggle" id="sidebarToggle" title="收起侧栏">✕</button>
             </div>
@@ -1035,7 +957,7 @@
 
     <script>
         (() => {
-            // ---------- 本地存储模拟后端 ----------
+            // ---------- 本地存储 ----------
             const LS_KEYS = {
                 CONVERSATIONS: 'minai_conversations',
                 ACTIVE_ID: 'minai_activeId',
@@ -1043,143 +965,13 @@
                 DARK_MODE: 'dark'
             };
 
-            // 工具函数：生成ID
             const genId = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
-
-            // 获取数据
-            const getConversations = () => {
-                try {
-                    return JSON.parse(localStorage.getItem(LS_KEYS.CONVERSATIONS)) || [];
-                } catch { return []; }
-            };
+            const getConversations = () => { try { return JSON.parse(localStorage.getItem(LS_KEYS.CONVERSATIONS)) || []; } catch { return []; } };
             const saveConversations = (list) => localStorage.setItem(LS_KEYS.CONVERSATIONS, JSON.stringify(list));
-
             const getActiveId = () => localStorage.getItem(LS_KEYS.ACTIVE_ID) || null;
             const saveActiveId = (id) => localStorage.setItem(LS_KEYS.ACTIVE_ID, id || '');
-
-            const getProviders = () => {
-                try {
-                    return JSON.parse(localStorage.getItem(LS_KEYS.PROVIDERS)) || [];
-                } catch { return []; }
-            };
+            const getProviders = () => { try { return JSON.parse(localStorage.getItem(LS_KEYS.PROVIDERS)) || []; } catch { return []; } };
             const saveProviders = (list) => localStorage.setItem(LS_KEYS.PROVIDERS, JSON.stringify(list));
-
-            // 模拟API调用
-            async function fakeApi(path, options = {}) {
-                // 模拟网络延迟
-                await new Promise(r => setTimeout(r, 100 + Math.random() * 150));
-
-                const body = options.body ? JSON.parse(options.body) : {};
-
-                // 路由模拟
-                if (path === '/api/conversations' && !options.method) {
-                    // GET /api/conversations
-                    const convs = getConversations();
-                    const activeId = getActiveId();
-                    const activeConv = convs.find(c => c.id === activeId);
-                    return {
-                        activeId,
-                        conversations: convs,
-                        messages: activeConv ? activeConv.messages : []
-                    };
-                } else if (path === '/api/conversations/new' && options.method === 'POST') {
-                    const convs = getConversations();
-                    const newConv = {
-                        id: genId(),
-                        title: '新对话',
-                        messages: [],
-                        createdAt: Date.now()
-                    };
-                    convs.unshift(newConv);
-                    saveConversations(convs);
-                    saveActiveId(newConv.id);
-                    return { activeId: newConv.id, conversations: convs, messages: [] };
-                } else if (path === '/api/conversations/select' && options.method === 'POST') {
-                    const { conversationId } = body;
-                    saveActiveId(conversationId);
-                    const convs = getConversations();
-                    const conv = convs.find(c => c.id === conversationId);
-                    return {
-                        activeId: conversationId,
-                        conversations: convs,
-                        messages: conv ? conv.messages : []
-                    };
-                } else if (path === '/api/conversations' && options.method === 'DELETE') {
-                    const { conversationId } = body;
-                    let convs = getConversations();
-                    convs = convs.filter(c => c.id !== conversationId);
-                    saveConversations(convs);
-                    const activeId = getActiveId();
-                    if (activeId === conversationId) {
-                        const newActiveId = convs.length > 0 ? convs[0].id : null;
-                        saveActiveId(newActiveId);
-                        const newConv = convs.find(c => c.id === newActiveId);
-                        return { activeId: newActiveId, conversations: convs, messages: newConv ? newConv.messages : [] };
-                    }
-                    return { conversations: convs };
-                } else if (path === '/api/chat' && options.method === 'POST') {
-                    const { messages, conversationId } = body;
-                    // 获取当前对话
-                    let convs = getConversations();
-                    const convIndex = convs.findIndex(c => c.id === conversationId);
-                    if (convIndex === -1) throw new Error('对话不存在');
-
-                    // 保存用户消息
-                    const userMsg = messages[messages.length - 1]; // 最后一条为用户消息
-                    convs[convIndex].messages.push(userMsg);
-
-                    // 生成模拟AI回复（如果API配置了真实地址可扩展，此处仅模拟）
-                    const userText = userMsg.content || '';
-                    let aiReply = '';
-                    if (userText.includes('代码') || userText.includes('python')) {
-                        aiReply = `当然！下面是一段 Python 示例代码：\n\n\`\`\`python\ndef hello():\n    print("Hello, MinAI!")\n\nhello()\n\`\`\`\n\n你可以直接运行这段代码。`;
-                    } else if (userText.includes('表格')) {
-                        aiReply = `这是一个示例表格：\n\n| 名称 | 版本 | 状态 |\n|------|------|------|\n| MinAI | 1.0 | 稳定 |\n| GPT | 4.0 | 活跃 |\n\n希望有帮助！`;
-                    } else {
-                        aiReply = `这是一个模拟回复：你刚才说 **"${userText}"** 。\n\n- 这是本地演示模式\n- 你可以配置真实 API 来使用完整功能\n- 支持 Markdown 渲染、代码高亮、流式输出`;
-                    }
-
-                    // 更新对话消息
-                    const aiMsg = { role: 'assistant', content: aiReply };
-                    convs[convIndex].messages.push(aiMsg);
-                    // 更新标题（使用第一条用户消息前20字）
-                    if (convs[convIndex].messages.length === 2) {
-                        convs[convIndex].title = userText.length > 20 ? userText.slice(0, 20) + '…' : userText;
-                    }
-                    saveConversations(convs);
-                    return { reply: aiReply, conversationId, conversations: convs };
-                } else if (path === '/api/providers') {
-                    if (!options.method || options.method === 'GET') {
-                        return { providers: getProviders() };
-                    } else if (options.method === 'POST') {
-                        const providers = getProviders();
-                        const newProvider = { id: genId(), ...body, apiKeySet: !!body.apiKey };
-                        providers.push(newProvider);
-                        saveProviders(providers);
-                        return { provider: newProvider };
-                    }
-                } else if (path.startsWith('/api/providers/') && options.method === 'PUT') {
-                    const id = path.split('/').pop();
-                    const providers = getProviders();
-                    const index = providers.findIndex(p => p.id === id);
-                    if (index !== -1) {
-                        providers[index] = { ...providers[index], ...body, apiKeySet: body.apiKey ? true : providers[index].apiKeySet };
-                        saveProviders(providers);
-                        return { provider: providers[index] };
-                    }
-                    return { error: '通道未找到' };
-                } else if (path.startsWith('/api/providers/') && options.method === 'DELETE') {
-                    const id = path.split('/').pop();
-                    let providers = getProviders();
-                    providers = providers.filter(p => p.id !== id);
-                    saveProviders(providers);
-                    return { success: true };
-                } else if (path === '/api/providers/test' && options.method === 'POST') {
-                    // 简单模拟测试连接，总是成功
-                    return { success: true, message: '连接正常（本地模拟）' };
-                }
-                return { error: '未知请求' };
-            }
 
             // ---------- 全局状态 ----------
             let currentConversationId = null;
@@ -1209,10 +1001,8 @@
                 marked.setOptions({ breaks: true, gfm: true });
                 if (typeof hljs !== 'undefined') {
                     marked.setOptions({
-                        highlight: function(code, lang) {
-                            if (lang && hljs.getLanguage(lang)) {
-                                try { return hljs.highlight(code, { language: lang }).value; } catch {}
-                            }
+                        highlight: (code, lang) => {
+                            if (lang && hljs.getLanguage(lang)) try { return hljs.highlight(code, { language: lang }).value; } catch {}
                             try { return hljs.highlightAuto(code).value; } catch {}
                             return code;
                         }
@@ -1220,60 +1010,42 @@
                 }
             }
 
-            // ---------- 主题 ----------
+            // 主题
             function applyTheme() {
                 const dark = localStorage.getItem(LS_KEYS.DARK_MODE) === '1';
                 document.documentElement.classList.toggle('dark', dark);
                 themeToggle.textContent = dark ? '☀' : '☾';
-                const lightCSS = document.getElementById('hljs-light');
-                const darkCSS = document.getElementById('hljs-dark');
-                if (lightCSS && darkCSS) {
-                    lightCSS.disabled = dark;
-                    darkCSS.disabled = !dark;
-                }
+                document.getElementById('hljs-light').disabled = dark;
+                document.getElementById('hljs-dark').disabled = !dark;
             }
-
             themeToggle.addEventListener('click', () => {
                 const isDark = !document.documentElement.classList.contains('dark');
                 document.documentElement.classList.toggle('dark', isDark);
                 localStorage.setItem(LS_KEYS.DARK_MODE, isDark ? '1' : '0');
                 themeToggle.textContent = isDark ? '☀' : '☾';
-                const lightCSS = document.getElementById('hljs-light');
-                const darkCSS = document.getElementById('hljs-dark');
-                if (lightCSS && darkCSS) {
-                    lightCSS.disabled = isDark;
-                    darkCSS.disabled = !isDark;
-                }
+                document.getElementById('hljs-light').disabled = isDark;
+                document.getElementById('hljs-dark').disabled = !isDark;
             });
 
-            // ---------- 数据加载 ----------
+            // 数据加载
             async function loadConversations() {
-                try {
-                    const data = await fakeApi('/api/conversations');
-                    currentConversationId = data.activeId;
-                    conversations = data.conversations || [];
-                    messagesState = data.messages || [];
-                    renderConversationList();
-                    renderMessages();
-                    if (conversations.length === 0) {
-                        // 自动创建第一个对话
-                        const res = await fakeApi('/api/conversations/new', { method: 'POST', body: '{}' });
-                        currentConversationId = res.activeId;
-                        conversations = res.conversations;
-                        messagesState = [];
-                        renderConversationList();
-                        renderMessages();
-                    }
-                } catch (e) {
-                    console.error('加载失败:', e);
+                conversations = getConversations();
+                currentConversationId = getActiveId();
+                if (!currentConversationId && conversations.length > 0) {
+                    currentConversationId = conversations[0].id;
+                    saveActiveId(currentConversationId);
                 }
+                const activeConv = conversations.find(c => c.id === currentConversationId);
+                messagesState = activeConv ? activeConv.messages : [];
+                renderConversationList();
+                renderMessages();
             }
 
             async function loadProviders() {
                 providers = getProviders();
             }
 
-            // ---------- 渲染 ----------
+            // 渲染
             function renderConversationList() {
                 conversationList.innerHTML = conversations.map(c => `
                     <div class="conv-item ${c.id === currentConversationId ? 'active' : ''}" data-id="${c.id}">
@@ -1325,10 +1097,7 @@
                         .replace(/\n/g, '<br>');
                 }
                 if (typeof DOMPurify !== 'undefined') {
-                    html = DOMPurify.sanitize(html, {
-                        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'del', 'a', 'img', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'span', 'div'],
-                        ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'target', 'rel', 'title'],
-                    });
+                    html = DOMPurify.sanitize(html, { ALLOWED_TAGS: ['p','br','strong','em','u','s','del','a','img','code','pre','h1','h2','h3','h4','h5','h6','ul','ol','li','blockquote','table','thead','tbody','tr','th','td','hr','span','div'], ALLOWED_ATTR: ['href','src','alt','class','target','rel','title'] });
                 }
                 return html;
             }
@@ -1342,15 +1111,12 @@
                     btn.addEventListener('click', async (e) => {
                         e.stopPropagation();
                         const codeEl = pre.querySelector('code');
-                        const codeText = codeEl ? codeEl.textContent : pre.textContent;
+                        const text = codeEl ? codeEl.textContent : pre.textContent;
                         try {
-                            await navigator.clipboard.writeText(codeText);
+                            await navigator.clipboard.writeText(text);
                             btn.textContent = '✓ 已复制';
                             btn.classList.add('copied');
-                            setTimeout(() => {
-                                btn.textContent = '复制';
-                                btn.classList.remove('copied');
-                            }, 2000);
+                            setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('copied'); }, 2000);
                         } catch {
                             btn.textContent = '失败';
                             setTimeout(() => btn.textContent = '复制', 1500);
@@ -1362,9 +1128,7 @@
             }
 
             function scrollToBottom() {
-                requestAnimationFrame(() => {
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                });
+                requestAnimationFrame(() => { messagesDiv.scrollTop = messagesDiv.scrollHeight; });
             }
 
             function escapeHtml(str) {
@@ -1373,20 +1137,17 @@
                 return div.innerHTML;
             }
 
-            // 移除所有光标
             function removeAllCursors() {
                 document.querySelectorAll('.streaming-cursor').forEach(el => el.remove());
             }
 
-            // 流式模拟
-            async function simulateStream(replyText, msgIndex) {
+            // 流式渲染
+            async function simulateStream(text, msgIndex) {
                 const msgEl = messagesInner.querySelector(`.msg-row[data-msg-index="${msgIndex}"]`);
                 if (!msgEl) return;
                 const contentEl = msgEl.querySelector('.msg-content');
-                if (!contentEl) return;
-
                 let displayed = '';
-                const chars = replyText.split('');
+                const chars = text.split('');
                 for (let i = 0; i < chars.length; i++) {
                     if (streamAbortController?.signal.aborted) break;
                     displayed += chars[i];
@@ -1397,14 +1158,20 @@
                     }
                     await new Promise(r => setTimeout(r, 10 + Math.random() * 15));
                 }
-                // 最终渲染，移除光标
-                contentEl.innerHTML = renderMarkdown(replyText);
+                contentEl.innerHTML = renderMarkdown(text);
                 addCopyButtonsToContainer(contentEl);
                 removeAllCursors();
                 scrollToBottom();
             }
 
-            // 发送消息
+            // 获取当前活动的 API 通道
+            function getActiveProvider() {
+                const all = getProviders();
+                // 返回第一个启用的通道，如果没有则返回 null
+                return all.find(p => p.enabled !== false) || null;
+            }
+
+            // 核心：发送消息（支持真实API与模拟）
             async function sendMessage(text) {
                 if (isStreaming || !text.trim()) return;
                 isStreaming = true;
@@ -1413,12 +1180,21 @@
 
                 const userMsg = { role: 'user', content: text };
                 messagesState.push(userMsg);
+                // 保存到本地
+                const convs = getConversations();
+                const convIndex = convs.findIndex(c => c.id === currentConversationId);
+                if (convIndex !== -1) {
+                    convs[convIndex].messages.push(userMsg);
+                    if (convs[convIndex].messages.length === 1) {
+                        convs[convIndex].title = text.length > 20 ? text.slice(0,20)+'…' : text;
+                    }
+                    saveConversations(convs);
+                }
                 renderMessages();
                 userInput.value = '';
                 userInput.style.height = 'auto';
                 scrollToBottom();
 
-                // 添加AI占位
                 const aiPlaceholder = { role: 'assistant', content: '' };
                 messagesState.push(aiPlaceholder);
                 const aiIndex = messagesState.length - 1;
@@ -1427,29 +1203,104 @@
                 if (aiEl) {
                     aiEl.querySelector('.msg-content').innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
                 }
+                scrollToBottom();
 
+                let replyText = '';
                 try {
-                    const res = await fakeApi('/api/chat', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            messages: messagesState.filter(m => m.content !== '' || m.role === 'assistant'),
-                            conversationId: currentConversationId,
-                        }),
-                    });
-                    if (res.error) throw new Error(res.error);
+                    const provider = getActiveProvider();
+                    if (provider && provider.apiHost && provider.apiKey) {
+                        // 真实 API 调用
+                        const apiUrl = (provider.apiHost.replace(/\/+$/, '') + (provider.apiPath || '/v1/chat/completions')).replace(/([^:]\/)\/+/g, '$1');
+                        const headers = {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${provider.apiKey}`
+                        };
+                        const body = JSON.stringify({
+                            model: provider.aiModel || 'gpt-4o-mini',
+                            messages: messagesState.filter(m => m.role === 'user' || m.role === 'assistant').map(m => ({ role: m.role, content: m.content })),
+                            stream: true
+                        });
 
-                    const replyText = res.reply || '';
-                    currentConversationId = res.conversationId || currentConversationId;
-                    conversations = res.conversations || conversations;
+                        const res = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers,
+                            body,
+                            signal: streamAbortController.signal
+                        });
+
+                        if (!res.ok) {
+                            const err = await res.text();
+                            throw new Error(`API 错误 ${res.status}: ${err}`);
+                        }
+
+                        const contentType = res.headers.get('content-type') || '';
+                        if (contentType.includes('text/event-stream')) {
+                            // 流式处理
+                            const reader = res.body.getReader();
+                            const decoder = new TextDecoder();
+                            let buffer = '';
+                            while (true) {
+                                const { done, value } = await reader.read();
+                                if (done) break;
+                                buffer += decoder.decode(value, { stream: true });
+                                const lines = buffer.split('\n');
+                                buffer = lines.pop() || '';
+                                for (const line of lines) {
+                                    if (line.startsWith('data: ')) {
+                                        const data = line.slice(6).trim();
+                                        if (data === '[DONE]') continue;
+                                        try {
+                                            const parsed = JSON.parse(data);
+                                            const delta = parsed.choices?.[0]?.delta?.content || '';
+                                            replyText += delta;
+                                            const el = messagesInner.querySelector(`.msg-row[data-msg-index="${aiIndex}"] .msg-content`);
+                                            if (el) {
+                                                el.innerHTML = renderMarkdown(replyText) + '<span class="streaming-cursor"></span>';
+                                                addCopyButtonsToContainer(el);
+                                            }
+                                            scrollToBottom();
+                                        } catch {}
+                                    }
+                                }
+                            }
+                        } else {
+                            // 非流式 JSON
+                            const data = await res.json();
+                            replyText = data.choices?.[0]?.message?.content || data.content || '';
+                            await simulateStream(replyText, aiIndex);
+                        }
+                    } else {
+                        // 无 API 配置，使用本地模拟
+                        const userText = text;
+                        let mockReply = '';
+                        if (userText.includes('代码') || userText.includes('python')) {
+                            mockReply = `当然！下面是一段 Python 示例代码：\n\n\`\`\`python\ndef hello():\n    print("Hello, MinAI!")\n\nhello()\n\`\`\`\n\n你可以直接运行这段代码。`;
+                        } else if (userText.includes('表格')) {
+                            mockReply = `这是一个示例表格：\n\n| 名称 | 版本 | 状态 |\n|------|------|------|\n| MinAI | 1.0 | 稳定 |\n| GPT | 4.0 | 活跃 |\n\n希望有帮助！`;
+                        } else {
+                            mockReply = `这是一个模拟回复：你刚才说 **"${userText}"** 。\n\n- 这是本地演示模式\n- 你可以配置真实 API 来使用完整功能\n- 支持 Markdown 渲染、代码高亮、流式输出`;
+                        }
+                        replyText = mockReply;
+                        await simulateStream(mockReply, aiIndex);
+                    }
+
+                    // 更新消息状态
                     messagesState[aiIndex].content = replyText;
-
-                    // 模拟流式输出
-                    await simulateStream(replyText, aiIndex);
-
-                    // 更新侧边栏
+                    // 保存到本地
+                    const updatedConvs = getConversations();
+                    const idx = updatedConvs.findIndex(c => c.id === currentConversationId);
+                    if (idx !== -1) {
+                        updatedConvs[idx].messages = messagesState;
+                        saveConversations(updatedConvs);
+                        conversations = updatedConvs;
+                    }
                     renderConversationList();
                 } catch (e) {
-                    messagesState[aiIndex].content = '❌ 错误: ' + e.message;
+                    if (e.name === 'AbortError') {
+                        messagesState[aiIndex].content = replyText || '[已中止]';
+                    } else {
+                        messagesState[aiIndex].content = '❌ 错误: ' + e.message;
+                    }
                     renderMessages();
                 } finally {
                     isStreaming = false;
@@ -1482,7 +1333,6 @@
                 userInput.style.height = Math.min(userInput.scrollHeight, 180) + 'px';
             }
 
-            // 更新输入框位置
             function updateComposerPosition() {
                 const composer = document.querySelector('.composer');
                 if (!composer) return;
@@ -1499,7 +1349,6 @@
                 }
             }
 
-            // 移动端侧栏
             function openMobileSidebar() {
                 if (window.innerWidth <= 768) {
                     sidePanel.classList.add('open');
@@ -1574,46 +1423,69 @@
             async function saveSettings() {
                 const providerData = {
                     name: $('settingsName').value.trim() || '未命名',
-                    apiHost: $('settingsApiHost').value.trim() || 'https://api.openai.com',
+                    apiHost: $('settingsApiHost').value.trim() || '',
                     apiPath: $('settingsApiPath').value.trim() || '',
                     aiModel: $('settingsModel').value.trim() || 'gpt-4o-mini',
                     enabled: true,
                 };
                 const apiKey = $('settingsApiKey').value;
-                if (apiKey && apiKey !== '••••••••') providerData.apiKey = apiKey;
+                if (apiKey && apiKey !== '••••••••') {
+                    providerData.apiKey = apiKey;
+                    providerData.apiKeySet = true;
+                }
 
+                let allProviders = getProviders();
                 if (!currentSettingsProviderId) {
-                    // 新建
-                    const res = await fakeApi('/api/providers', { method: 'POST', body: JSON.stringify(providerData) });
-                    if (res.provider) {
-                        providers = getProviders();
-                        currentSettingsProviderId = res.provider.id;
-                        renderProviderTabs();
-                        populateSettingsForm();
-                    }
+                    const newId = genId();
+                    const newProvider = { id: newId, ...providerData };
+                    allProviders.push(newProvider);
+                    saveProviders(allProviders);
+                    providers = allProviders;
+                    currentSettingsProviderId = newId;
                 } else {
-                    const res = await fakeApi(`/api/providers/${currentSettingsProviderId}`, { method: 'PUT', body: JSON.stringify(providerData) });
-                    if (res.provider) {
-                        providers = getProviders();
-                        renderProviderTabs();
-                        populateSettingsForm();
+                    const index = allProviders.findIndex(p => p.id === currentSettingsProviderId);
+                    if (index !== -1) {
+                        allProviders[index] = { ...allProviders[index], ...providerData };
+                        saveProviders(allProviders);
+                        providers = allProviders;
                     }
                 }
+                renderProviderTabs();
+                populateSettingsForm();
             }
 
             async function testConnection() {
                 const testResult = $('testResult');
                 testResult.style.display = 'block';
-                testResult.textContent = '模拟测试…';
+                testResult.textContent = '正在测试…';
                 testResult.className = 'test-result';
-                await new Promise(r => setTimeout(r, 500));
-                testResult.textContent = '✓ 本地模拟连接成功';
-                testResult.className = 'test-result success';
+                const host = $('settingsApiHost').value.trim();
+                const apiKey = $('settingsApiKey').value === '••••••••' ? null : $('settingsApiKey').value;
+                if (!host || !apiKey) {
+                    testResult.textContent = '请填写接口地址和 API Key';
+                    testResult.className = 'test-result error';
+                    return;
+                }
+                try {
+                    const res = await fetch(host.replace(/\/+$/, '') + '/v1/models', {
+                        headers: { 'Authorization': `Bearer ${apiKey}` }
+                    });
+                    if (res.ok) {
+                        testResult.textContent = '✓ 连接成功';
+                        testResult.className = 'test-result success';
+                    } else {
+                        const err = await res.text();
+                        testResult.textContent = '✗ 失败: ' + err.slice(0, 50);
+                        testResult.className = 'test-result error';
+                    }
+                } catch (e) {
+                    testResult.textContent = '✗ 网络错误: ' + e.message;
+                    testResult.className = 'test-result error';
+                }
             }
 
             async function addNewProvider() {
                 currentSettingsProviderId = null;
-                populateSettingsForm();
                 $('settingsName').value = '新通道';
                 $('settingsModel').value = 'gpt-4o-mini';
                 $('settingsApiKey').value = '';
@@ -1627,8 +1499,9 @@
                 if (!currentSettingsProviderId) return;
                 if (providers.length <= 1) { alert('至少保留一个通道'); return; }
                 if (!confirm('确定删除？')) return;
-                await fakeApi(`/api/providers/${currentSettingsProviderId}`, { method: 'DELETE' });
-                providers = getProviders();
+                let allProviders = getProviders().filter(p => p.id !== currentSettingsProviderId);
+                saveProviders(allProviders);
+                providers = allProviders;
                 currentSettingsProviderId = providers[0]?.id || null;
                 renderProviderTabs();
                 populateSettingsForm();
@@ -1636,11 +1509,15 @@
 
             // 事件绑定
             function bindEvents() {
-                $('newChatButton').addEventListener('click', async () => {
+                $('newChatButton').addEventListener('click', () => {
                     if (isStreaming) return;
-                    const res = await fakeApi('/api/conversations/new', { method: 'POST', body: '{}' });
-                    currentConversationId = res.activeId;
-                    conversations = res.conversations;
+                    const convs = getConversations();
+                    const newConv = { id: genId(), title: '新对话', messages: [], createdAt: Date.now() };
+                    convs.unshift(newConv);
+                    saveConversations(convs);
+                    conversations = convs;
+                    currentConversationId = newConv.id;
+                    saveActiveId(currentConversationId);
                     messagesState = [];
                     renderConversationList();
                     renderMessages();
@@ -1653,10 +1530,14 @@
                         e.stopPropagation();
                         const id = deleteBtn.dataset.deleteId;
                         if (!confirm('确定删除该对话吗？')) return;
-                        const res = await fakeApi('/api/conversations', { method: 'DELETE', body: JSON.stringify({ conversationId: id }) });
-                        conversations = res.conversations || getConversations();
-                        currentConversationId = res.activeId || getActiveId();
-                        messagesState = res.messages || [];
+                        let convs = getConversations().filter(c => c.id !== id);
+                        saveConversations(convs);
+                        conversations = convs;
+                        if (currentConversationId === id) {
+                            currentConversationId = convs[0]?.id || null;
+                            saveActiveId(currentConversationId);
+                            messagesState = convs[0]?.messages || [];
+                        }
                         renderConversationList();
                         renderMessages();
                         return;
@@ -1665,10 +1546,12 @@
                     if (!item) return;
                     const id = item.dataset.id;
                     if (id === currentConversationId) return;
-                    const res = await fakeApi('/api/conversations/select', { method: 'POST', body: JSON.stringify({ conversationId: id }) });
                     currentConversationId = id;
-                    conversations = res.conversations || [];
-                    messagesState = res.messages || [];
+                    saveActiveId(id);
+                    const convs = getConversations();
+                    conversations = convs;
+                    const conv = convs.find(c => c.id === id);
+                    messagesState = conv ? conv.messages : [];
                     renderConversationList();
                     renderMessages();
                     closeMobileSidebar();
@@ -1712,7 +1595,6 @@
                 window.addEventListener('resize', updateComposerPosition);
             }
 
-            // 启动
             (async () => {
                 await loadProviders();
                 await loadConversations();
