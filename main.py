@@ -23,8 +23,14 @@ CONVERSATIONS_PATH = DATA_DIR / "conversations.json"
 PROVIDERS_PATH = DATA_DIR / "providers.json"
 MAX_BODY_SIZE = 16 * 1024 * 1024
 GENERATED_IMAGE_MAX_BYTES = 25 * 1024 * 1024
+
+# 文件级锁，防止并发写损坏
 CONVERSATIONS_LOCK = threading.RLock()
+PROVIDERS_LOCK = threading.RLock()
+
+# 内存缓存
 CONVERSATIONS_CACHE = {"mtime": None, "data": None}
+PROVIDERS_CACHE = {"mtime": None, "data": None}
 
 IMAGE_EXTENSIONS = {
     "image/png": ".png",
@@ -37,7 +43,6 @@ IMAGE_EXTENSIONS = {
 # -------------------- 静态文件缓存 --------------------
 @lru_cache(maxsize=32)
 def cached_static_file(filepath):
-    """缓存静态文件内容，减少磁盘读取"""
     try:
         return filepath.read_bytes()
     except:
@@ -59,17 +64,74 @@ def load_env_file():
 
 load_env_file()
 
-def read_json(path, fallback):
+def safe_read_json(path, fallback):
+    """安全读取 JSON，损坏时返回 fallback 并尝试备份恢复"""
+    if not path.exists():
+        return fallback
     try:
-        return json.loads(path.read_text("utf-8"))
-    except Exception:
+        text = path.read_text("utf-8")
+        if not text.strip():
+            # 空文件，尝试备份
+            backup = path.with_suffix(path.suffix + ".bak")
+            if backup.exists():
+                try:
+                    data = json.loads(backup.read_text("utf-8"))
+                    # 恢复主文件
+                    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", "utf-8")
+                    return data
+                except:
+                    pass
+            return fallback
+        return json.loads(text)
+    except json.JSONDecodeError as e:
+        # JSON 损坏，尝试备份恢复
+        print(f"[WARN] {path} 损坏: {e}")
+        backup = path.with_suffix(path.suffix + ".bak")
+        if backup.exists():
+            try:
+                data = json.loads(backup.read_text("utf-8"))
+                path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", "utf-8")
+                print(f"[INFO] 已从备份恢复 {path}")
+                return data
+            except Exception as e2:
+                print(f"[WARN] 备份也损坏: {e2}")
+        # 重命名损坏文件，创建新的
+        corrupted = path.with_suffix(path.suffix + ".corrupted." + str(int(time.time())))
+        try:
+            path.rename(corrupted)
+            print(f"[INFO] 已重命名损坏文件为 {corrupted}")
+        except:
+            pass
+        return fallback
+    except Exception as e:
+        print(f"[WARN] 读取 {path} 失败: {e}")
         return fallback
 
-def write_json(path, data):
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+def atomic_write_json(path, data):
+    """原子写入 JSON，带备份"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
     tmp_path = path.with_suffix(path.suffix + ".tmp")
-    tmp_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", "utf-8")
-    tmp_path.replace(path)
+    bak_path = path.with_suffix(path.suffix + ".bak")
+    try:
+        # 先写临时文件
+        tmp_path.write_text(text, "utf-8")
+        # 如果原文件存在，先备份
+        if path.exists():
+            try:
+                # 复制内容到备份（而不是重命名，保留原文件直到替换成功）
+                bak_path.write_text(path.read_text("utf-8"), "utf-8")
+            except:
+                pass
+        # 原子替换
+        tmp_path.replace(path)
+    except Exception as e:
+        # 清理临时文件
+        try:
+            tmp_path.unlink(missing_ok=True)
+        except:
+            pass
+        raise e
 
 def clean_text(value, max_length):
     return str(value or "").strip()[:max_length]
@@ -80,7 +142,7 @@ def strip_trailing_slash(value):
 def now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
-# -------------------- 图片处理（保留） --------------------
+# -------------------- 图片处理 --------------------
 def detect_image_extension(raw, content_type="", source_url=""):
     mime_type = str(content_type or "").split(";", 1)[0].strip().lower()
     if mime_type in IMAGE_EXTENSIONS:
@@ -194,7 +256,7 @@ def normalize_messages(messages):
             normalized.append({"role": role, "content": content})
     return normalized[-16:]
 
-# -------------------- 对话存储 --------------------
+# -------------------- 对话存储（带缓存和损坏恢复） --------------------
 def conversation_messages(messages):
     if not isinstance(messages, list):
         return []
@@ -247,7 +309,7 @@ def read_conversations():
             return {}
         if CONVERSATIONS_CACHE.get("mtime") == mtime and isinstance(CONVERSATIONS_CACHE.get("data"), dict):
             return CONVERSATIONS_CACHE["data"]
-        data = read_json(CONVERSATIONS_PATH, {})
+        data = safe_read_json(CONVERSATIONS_PATH, {})
         if not isinstance(data, dict):
             data = {}
         CONVERSATIONS_CACHE["mtime"] = mtime
@@ -257,7 +319,7 @@ def read_conversations():
 def write_conversations(data):
     with CONVERSATIONS_LOCK:
         payload = data if isinstance(data, dict) else {}
-        write_json(CONVERSATIONS_PATH, payload)
+        atomic_write_json(CONVERSATIONS_PATH, payload)
         CONVERSATIONS_CACHE["data"] = payload
         try:
             CONVERSATIONS_CACHE["mtime"] = CONVERSATIONS_PATH.stat().st_mtime_ns
@@ -385,20 +447,46 @@ def delete_conversation(conversation_id):
     save_conversation_store(store)
     return conversation_payload(store)
 
-# -------------------- API 通道管理 --------------------
+# -------------------- API 通道管理（带缓存和损坏恢复） --------------------
+def read_providers():
+    """读取 providers，带缓存"""
+    with PROVIDERS_LOCK:
+        try:
+            mtime = PROVIDERS_PATH.stat().st_mtime_ns
+        except FileNotFoundError:
+            PROVIDERS_CACHE["mtime"] = None
+            PROVIDERS_CACHE["data"] = []
+            return []
+        if PROVIDERS_CACHE.get("mtime") == mtime and isinstance(PROVIDERS_CACHE.get("data"), list):
+            return PROVIDERS_CACHE["data"]
+        data = safe_read_json(PROVIDERS_PATH, [])
+        if not isinstance(data, list):
+            data = []
+        # 数据迁移
+        for p in data:
+            if "apiHost" not in p and "apiBaseUrl" in p:
+                p["apiHost"] = p.pop("apiBaseUrl")
+            if "apiHost" not in p:
+                p["apiHost"] = "https://api.openai.com"
+        PROVIDERS_CACHE["mtime"] = mtime
+        PROVIDERS_CACHE["data"] = data
+        return data
+
+def write_providers(data):
+    with PROVIDERS_LOCK:
+        payload = data if isinstance(data, list) else []
+        atomic_write_json(PROVIDERS_PATH, payload)
+        PROVIDERS_CACHE["data"] = payload
+        try:
+            PROVIDERS_CACHE["mtime"] = PROVIDERS_PATH.stat().st_mtime_ns
+        except FileNotFoundError:
+            PROVIDERS_CACHE["mtime"] = None
+
 def list_providers():
-    providers = read_json(PROVIDERS_PATH, [])
-    if not isinstance(providers, list):
-        providers = []
-    for p in providers:
-        if "apiHost" not in p and "apiBaseUrl" in p:
-            p["apiHost"] = p.pop("apiBaseUrl")
-        if "apiHost" not in p:
-            p["apiHost"] = "https://api.openai.com"
-    return providers
+    return read_providers()
 
 def save_providers(providers):
-    write_json(PROVIDERS_PATH, providers)
+    write_providers(providers)
 
 def public_provider(p):
     return {
@@ -520,32 +608,48 @@ def models_url(base_url):
 
 # -------------------- HTTP Handler --------------------
 class Handler(BaseHTTPRequestHandler):
-    server_version = "MinAI/2.0"
+    server_version = "MinAI/2.1"
 
     def log_message(self, fmt, *args):
         print(f"{self.client_address[0]} - {self.log_date_time_string()} {fmt % args}")
 
     def do_GET(self):
-        parsed = urllib.parse.urlparse(self.path)
-        if parsed.path.startswith("/api/"):
-            self.route_api("GET", parsed.path)
-            return
-        if parsed.path.startswith("/generated/"):
-            self.serve_generated(parsed.path)
-            return
-        self.serve_static(parsed.path)
+        try:
+            parsed = urllib.parse.urlparse(self.path)
+            if parsed.path.startswith("/api/"):
+                self.route_api("GET", parsed.path)
+                return
+            if parsed.path.startswith("/generated/"):
+                self.serve_generated(parsed.path)
+                return
+            self.serve_static(parsed.path)
+        except Exception as e:
+            print(f"[ERROR] GET {self.path}: {e}")
+            self.send_json(500, {"error": "服务器内部错误"})
 
     def do_POST(self):
-        parsed = urllib.parse.urlparse(self.path)
-        self.route_api("POST", parsed.path)
+        try:
+            parsed = urllib.parse.urlparse(self.path)
+            self.route_api("POST", parsed.path)
+        except Exception as e:
+            print(f"[ERROR] POST {self.path}: {e}")
+            self.send_json(500, {"error": "服务器内部错误"})
 
     def do_PUT(self):
-        parsed = urllib.parse.urlparse(self.path)
-        self.route_api("PUT", parsed.path)
+        try:
+            parsed = urllib.parse.urlparse(self.path)
+            self.route_api("PUT", parsed.path)
+        except Exception as e:
+            print(f"[ERROR] PUT {self.path}: {e}")
+            self.send_json(500, {"error": "服务器内部错误"})
 
     def do_DELETE(self):
-        parsed = urllib.parse.urlparse(self.path)
-        self.route_api("DELETE", parsed.path)
+        try:
+            parsed = urllib.parse.urlparse(self.path)
+            self.route_api("DELETE", parsed.path)
+        except Exception as e:
+            print(f"[ERROR] DELETE {self.path}: {e}")
+            self.send_json(500, {"error": "服务器内部错误"})
 
     def route_api(self, method, path):
         # 聊天核心
@@ -585,7 +689,12 @@ class Handler(BaseHTTPRequestHandler):
 
         # 通道管理
         if method == "GET" and path == "/api/providers":
-            self.send_json(200, {"providers": [public_provider(p) for p in list_providers()]})
+            try:
+                providers = list_providers()
+                self.send_json(200, {"providers": [public_provider(p) for p in providers]})
+            except Exception as e:
+                print(f"[ERROR] list_providers: {e}")
+                self.send_json(500, {"error": "读取通道列表失败，数据可能损坏"})
             return
         if method == "POST" and path == "/api/providers":
             body = self.read_json_body()
@@ -593,6 +702,7 @@ class Handler(BaseHTTPRequestHandler):
                 provider = create_provider(body)
                 self.send_json(201, {"provider": public_provider(provider)})
             except Exception as e:
+                print(f"[ERROR] create_provider: {e}")
                 self.send_json(400, {"error": str(e)})
             return
         if path.startswith("/api/providers/"):
@@ -601,16 +711,24 @@ class Handler(BaseHTTPRequestHandler):
                 provider_id = parts[3]
                 if method == "PUT":
                     body = self.read_json_body()
-                    updated = update_provider(provider_id, body)
-                    if updated:
-                        self.send_json(200, {"provider": public_provider(updated)})
-                    else:
-                        self.send_json(404, {"error": "通道不存在"})
+                    try:
+                        updated = update_provider(provider_id, body)
+                        if updated:
+                            self.send_json(200, {"provider": public_provider(updated)})
+                        else:
+                            self.send_json(404, {"error": "通道不存在"})
+                    except Exception as e:
+                        print(f"[ERROR] update_provider: {e}")
+                        self.send_json(500, {"error": str(e)})
                 elif method == "DELETE":
-                    if delete_provider(provider_id):
-                        self.send_json(200, {"ok": True})
-                    else:
-                        self.send_json(404, {"error": "通道不存在或无法删除"})
+                    try:
+                        if delete_provider(provider_id):
+                            self.send_json(200, {"ok": True})
+                        else:
+                            self.send_json(404, {"error": "通道不存在或无法删除"})
+                    except Exception as e:
+                        print(f"[ERROR] delete_provider: {e}")
+                        self.send_json(500, {"error": str(e)})
                 else:
                     self.send_json(405, {"error": "方法不允许"})
                 return
@@ -695,15 +813,12 @@ class Handler(BaseHTTPRequestHandler):
         try:
             with urllib.request.urlopen(req, timeout=300) as response:
                 if stream:
-                    # 关键修复：SSE 响应必须关闭连接，否则前端 ReadableStream 永远挂起
                     self.send_response(200)
                     self.send_header("Content-Type", "text/event-stream")
                     self.send_header("Cache-Control", "no-cache")
-                    # 明确关闭连接，让前端知道响应结束
                     self.send_header("Connection", "close")
                     self.end_headers()
 
-                    # 使用增量解码器避免中文 UTF-8 被 chunk 边界切分
                     decoder = codecs.getincrementaldecoder('utf-8')()
                     full_reply = ""
 
@@ -732,7 +847,6 @@ class Handler(BaseHTTPRequestHandler):
                         except:
                             pass
 
-                    # 刷新解码器中可能剩余的字符
                     try:
                         remaining = decoder.decode(b'', final=True)
                         for line in remaining.split("\n"):
@@ -751,7 +865,6 @@ class Handler(BaseHTTPRequestHandler):
                     except:
                         pass
 
-                    # 发送明确的结束标记，然后关闭连接
                     self.wfile.write(b"data: [DONE]\n\n")
                     self.wfile.flush()
 
@@ -763,10 +876,8 @@ class Handler(BaseHTTPRequestHandler):
                         self.wfile.write(f"data: {meta}\n\n".encode())
                         self.wfile.flush()
 
-                    # 双重保险：确保连接关闭
                     self.close_connection = True
                 else:
-                    # 非流式模式
                     upstream = json.loads(response.read().decode("utf-8"))
                     choice = (upstream.get("choices") or [{}])[0]
                     message = choice.get("message") or {}
@@ -932,14 +1043,28 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 初始化对话文件（如果不存在或损坏）
     if not CONVERSATIONS_PATH.exists():
-        write_json(CONVERSATIONS_PATH, {"activeId": "", "items": []})
+        atomic_write_json(CONVERSATIONS_PATH, {"activeId": "", "items": []})
+    else:
+        # 验证现有文件是否有效
+        try:
+            data = safe_read_json(CONVERSATIONS_PATH, None)
+            if data is None:
+                print("[WARN] conversations.json 损坏，已重置")
+                atomic_write_json(CONVERSATIONS_PATH, {"activeId": "", "items": []})
+        except Exception as e:
+            print(f"[WARN] 验证 conversations.json 失败: {e}")
+            atomic_write_json(CONVERSATIONS_PATH, {"activeId": "", "items": []})
+
+    # 初始化通道文件
     if not PROVIDERS_PATH.exists():
         env_host = os.getenv("API_BASE_URL", "")
         env_key = os.getenv("API_KEY", "")
         env_model = os.getenv("AI_MODEL", "gpt-4o-mini")
         if env_host and env_key:
-            write_json(PROVIDERS_PATH, [{
+            atomic_write_json(PROVIDERS_PATH, [{
                 "id": "default",
                 "name": "默认通道",
                 "apiHost": env_host,
@@ -952,7 +1077,16 @@ def main():
                 "updatedAt": now_iso(),
             }])
         else:
-            write_json(PROVIDERS_PATH, [])
+            atomic_write_json(PROVIDERS_PATH, [])
+    else:
+        try:
+            data = safe_read_json(PROVIDERS_PATH, None)
+            if data is None:
+                print("[WARN] providers.json 损坏，已重置为空列表")
+                atomic_write_json(PROVIDERS_PATH, [])
+        except Exception as e:
+            print(f"[WARN] 验证 providers.json 失败: {e}")
+            atomic_write_json(PROVIDERS_PATH, [])
 
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "3000"))
