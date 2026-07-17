@@ -1054,12 +1054,18 @@
             const headerTitle = $('headerTitle');
 
             // ---------- API 工具（真实 fetch） ----------
+            // 修复：处理空响应体，避免 DELETE 等请求返回空内容时 res.json() 抛异常
             async function api(url, options = {}) {
                 const res = await fetch(url, {
                     headers: { 'Content-Type': 'application/json' },
                     ...options,
                 });
-                return res.json();
+                const text = await res.text();
+                try {
+                    return text ? JSON.parse(text) : {};
+                } catch {
+                    return { error: 'Invalid JSON response', raw: text };
+                }
             }
 
             // ---------- marked.js 配置 ----------
@@ -1134,8 +1140,23 @@
                 }
             }
 
+            // 修复：增加空对话保护，避免无意义地创建空对话记录
             async function newConversation() {
                 try {
+                    const hasUserMessages = messagesState.some(m => m.role === 'user');
+                    // 如果当前对话没有任何用户消息，直接清空复用，不调用 API 创建新记录
+                    if (!hasUserMessages && currentConversationId) {
+                        messagesState = [];
+                        renderMessages();
+                        headerTitle.textContent = '新对话';
+                        const currentConv = conversations.find(c => c.id === currentConversationId);
+                        if (currentConv) {
+                            currentConv.title = '新对话';
+                            renderConversationList();
+                        }
+                        return;
+                    }
+
                     const data = await api('/api/conversations/new', { method: 'POST' });
                     currentConversationId = data.activeId;
                     conversations = data.conversations || [];
@@ -1312,7 +1333,11 @@
                         signal: streamAbortController.signal,
                     });
 
-                    if (!res.ok) throw new Error('API 请求失败');
+                    // 修复：读取详细的错误响应
+                    if (!res.ok) {
+                        const errorData = await res.json().catch(() => ({}));
+                        throw new Error(errorData.error || `API 请求失败 (${res.status})`);
+                    }
 
                     const contentType = res.headers.get('content-type') || '';
                     let replyText = '';
@@ -1324,7 +1349,24 @@
                         let buffer = '';
                         while (true) {
                             const { done, value } = await reader.read();
-                            if (done) break;
+                            if (done) {
+                                // 修复：处理 buffer 中剩余的最后几行数据
+                                if (buffer.trim()) {
+                                    const lines = buffer.trim().split('\n');
+                                    for (const line of lines) {
+                                        if (line.startsWith('data: ')) {
+                                            const data = line.slice(6).trim();
+                                            if (data === '[DONE]') continue;
+                                            try {
+                                                const parsed = JSON.parse(data);
+                                                const delta = parsed.choices?.[0]?.delta?.content || parsed.content || '';
+                                                replyText += delta;
+                                            } catch {}
+                                        }
+                                    }
+                                }
+                                break;
+                            }
                             buffer += decoder.decode(value, { stream: true });
                             const lines = buffer.split('\n');
                             buffer = lines.pop() || '';
@@ -1346,13 +1388,7 @@
                                 }
                             }
                         }
-                        // SSE结束后移除光标
-                        const el = messagesInner.querySelector(`.msg-row[data-msg-index="${aiIndex}"] .msg-content`);
-                        if (el) {
-                            el.innerHTML = renderMarkdown(replyText);
-                            addCopyButtonsToContainer(el);
-                        }
-                        removeAllCursors();
+                        messagesState[aiIndex].content = replyText;
                     } else {
                         // 普通JSON响应
                         const data = await res.json();
@@ -1361,9 +1397,9 @@
                         currentConversationId = data.conversationId || currentConversationId;
                         if (data.conversations) conversations = data.conversations;
                         await simulateStream(replyText, aiIndex);
+                        messagesState[aiIndex].content = replyText;
                     }
 
-                    messagesState[aiIndex].content = replyText;
                     if (currentConversationId) {
                         renderConversationList();
                     }
@@ -1373,15 +1409,15 @@
                     } else {
                         messagesState[aiIndex].content = '❌ 错误: ' + e.message;
                     }
-                    renderMessages();
-                    removeAllCursors();
                 } finally {
+                    // 修复：确保状态重置、UI 同步、光标清理、输入框恢复聚焦
                     isStreaming = false;
                     streamAbortController = null;
+                    renderMessages();
+                    removeAllCursors();
                     updateSendButton();
                     scrollToBottom();
-                    // 确保任何残留光标被移除
-                    removeAllCursors();
+                    userInput.focus();
                 }
             }
 
@@ -1613,20 +1649,22 @@
                         const id = deleteBtn.dataset.deleteId;
                         if (!confirm('确定删除该对话吗？')) return;
                         try {
-                            const res = await api('/api/conversations', {
+                            // 修复：使用修复后的 api 函数，删除后重新加载完整数据
+                            await api('/api/conversations', {
                                 method: 'DELETE',
                                 body: JSON.stringify({ conversationId: id })
                             });
-                            conversations = res.conversations || (await api('/api/conversations')).conversations;
+                            const data = await api('/api/conversations');
+                            conversations = data.conversations || [];
                             if (currentConversationId === id) {
-                                currentConversationId = conversations.length > 0 ? conversations[0].id : null;
-                                const activeConv = conversations.find(c => c.id === currentConversationId);
-                                messagesState = activeConv ? activeConv.messages : [];
+                                currentConversationId = data.activeId || (conversations.length > 0 ? conversations[0].id : null);
+                                messagesState = data.messages || [];
                             }
                             renderConversationList();
                             renderMessages();
                         } catch (err) {
                             console.error('删除失败:', err);
+                            alert('删除失败: ' + err.message);
                         }
                         return;
                     }
