@@ -24,7 +24,7 @@ PROVIDERS_PATH = DATA_DIR / "providers.json"
 MAX_BODY_SIZE = 16 * 1024 * 1024
 GENERATED_IMAGE_MAX_BYTES = 25 * 1024 * 1024
 
-# 文件级锁，防止并发写损坏
+# 文件级锁
 CONVERSATIONS_LOCK = threading.RLock()
 PROVIDERS_LOCK = threading.RLock()
 
@@ -40,6 +40,7 @@ IMAGE_EXTENSIONS = {
     "image/gif": ".gif",
 }
 
+
 # -------------------- 静态文件缓存 --------------------
 @lru_cache(maxsize=32)
 def cached_static_file(filepath):
@@ -47,6 +48,7 @@ def cached_static_file(filepath):
         return filepath.read_bytes()
     except:
         return None
+
 
 # -------------------- 工具函数 --------------------
 def load_env_file():
@@ -62,21 +64,21 @@ def load_env_file():
         value = value.strip().strip('"').strip("'")
         os.environ.setdefault(key, value)
 
+
 load_env_file()
 
+
 def safe_read_json(path, fallback):
-    """安全读取 JSON，损坏时返回 fallback 并尝试备份恢复"""
+    """安全读取 JSON，损坏时返回 fallback 并尝试恢复"""
     if not path.exists():
         return fallback
     try:
         text = path.read_text("utf-8")
         if not text.strip():
-            # 空文件，尝试备份
             backup = path.with_suffix(path.suffix + ".bak")
             if backup.exists():
                 try:
                     data = json.loads(backup.read_text("utf-8"))
-                    # 恢复主文件
                     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", "utf-8")
                     return data
                 except:
@@ -84,7 +86,6 @@ def safe_read_json(path, fallback):
             return fallback
         return json.loads(text)
     except json.JSONDecodeError as e:
-        # JSON 损坏，尝试备份恢复
         print(f"[WARN] {path} 损坏: {e}")
         backup = path.with_suffix(path.suffix + ".bak")
         if backup.exists():
@@ -95,7 +96,6 @@ def safe_read_json(path, fallback):
                 return data
             except Exception as e2:
                 print(f"[WARN] 备份也损坏: {e2}")
-        # 重命名损坏文件，创建新的
         corrupted = path.with_suffix(path.suffix + ".corrupted." + str(int(time.time())))
         try:
             path.rename(corrupted)
@@ -107,40 +107,40 @@ def safe_read_json(path, fallback):
         print(f"[WARN] 读取 {path} 失败: {e}")
         return fallback
 
+
 def atomic_write_json(path, data):
     """原子写入 JSON，带备份"""
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
     tmp_path = path.with_suffix(path.suffix + ".tmp")
-    bak_path = path.with_suffix(path.suffix + ".bak")
     try:
-        # 先写临时文件
         tmp_path.write_text(text, "utf-8")
-        # 如果原文件存在，先备份
         if path.exists():
             try:
-                # 复制内容到备份（而不是重命名，保留原文件直到替换成功）
+                bak_path = path.with_suffix(path.suffix + ".bak")
                 bak_path.write_text(path.read_text("utf-8"), "utf-8")
             except:
                 pass
-        # 原子替换
         tmp_path.replace(path)
     except Exception as e:
-        # 清理临时文件
         try:
             tmp_path.unlink(missing_ok=True)
         except:
             pass
         raise e
 
+
 def clean_text(value, max_length):
     return str(value or "").strip()[:max_length]
+
 
 def strip_trailing_slash(value):
     return str(value or "").strip().rstrip("/")
 
+
 def now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
 
 # -------------------- 图片处理 --------------------
 def detect_image_extension(raw, content_type="", source_url=""):
@@ -161,6 +161,7 @@ def detect_image_extension(raw, content_type="", source_url=""):
         return ".jpg" if extension == ".jpeg" else extension
     return ""
 
+
 def save_generated_image(raw, extension):
     if not raw:
         return ""
@@ -168,6 +169,7 @@ def save_generated_image(raw, extension):
     filename = f"{int(time.time())}-{secrets.token_hex(8)}{extension or '.png'}"
     (GENERATED_DIR / filename).write_bytes(raw)
     return f"/generated/{filename}"
+
 
 def store_data_image(image):
     header, encoded = image.split(",", 1)
@@ -177,6 +179,7 @@ def store_data_image(image):
     if len(raw) > GENERATED_IMAGE_MAX_BYTES:
         raise ValueError("uploaded image is too large")
     return save_generated_image(raw, extension)
+
 
 def store_remote_image(url):
     request = urllib.request.Request(
@@ -196,6 +199,7 @@ def store_remote_image(url):
             raise ValueError("remote result is not an image")
         return save_generated_image(raw, extension)
 
+
 def persist_image_url(url):
     if not isinstance(url, str):
         return ""
@@ -213,6 +217,7 @@ def persist_image_url(url):
         except Exception:
             return ""
     return ""
+
 
 # -------------------- 消息标准化 --------------------
 def normalize_messages(messages):
@@ -256,7 +261,8 @@ def normalize_messages(messages):
             normalized.append({"role": role, "content": content})
     return normalized[-16:]
 
-# -------------------- 对话存储（带缓存和损坏恢复） --------------------
+
+# -------------------- 对话存储 --------------------
 def conversation_messages(messages):
     if not isinstance(messages, list):
         return []
@@ -299,6 +305,7 @@ def conversation_messages(messages):
             })
     return normalized[-40:]
 
+
 def read_conversations():
     with CONVERSATIONS_LOCK:
         try:
@@ -316,6 +323,7 @@ def read_conversations():
         CONVERSATIONS_CACHE["data"] = data
         return data
 
+
 def write_conversations(data):
     with CONVERSATIONS_LOCK:
         payload = data if isinstance(data, dict) else {}
@@ -325,6 +333,7 @@ def write_conversations(data):
             CONVERSATIONS_CACHE["mtime"] = CONVERSATIONS_PATH.stat().st_mtime_ns
         except FileNotFoundError:
             CONVERSATIONS_CACHE["mtime"] = None
+
 
 def normalize_conversation_store(data):
     if not isinstance(data, dict):
@@ -356,6 +365,7 @@ def normalize_conversation_store(data):
         active_id = items[0]["id"]
     return {"activeId": active_id, "items": items[:50]}
 
+
 def conversation_title(messages):
     for msg in messages:
         if msg.get("role") == "user" and msg.get("content"):
@@ -368,11 +378,14 @@ def conversation_title(messages):
                 return clean_text(text, 28) or "新对话"
     return "新对话"
 
+
 def get_conversation_store():
     return normalize_conversation_store(read_conversations())
 
+
 def save_conversation_store(store):
     write_conversations(store)
+
 
 def conversation_summary(item):
     return {
@@ -383,6 +396,7 @@ def conversation_summary(item):
         "updatedAt": item["updatedAt"],
     }
 
+
 def conversation_payload(store):
     active = next((it for it in store["items"] if it["id"] == store["activeId"]), None)
     return {
@@ -391,6 +405,7 @@ def conversation_payload(store):
         "messages": active["messages"] if active else [],
         "conversations": [conversation_summary(it) for it in store["items"]],
     }
+
 
 def upsert_conversation(conversation_id, messages):
     store = get_conversation_store()
@@ -407,6 +422,7 @@ def upsert_conversation(conversation_id, messages):
     save_conversation_store(store)
     return conversation_payload(store)
 
+
 def create_conversation():
     store = get_conversation_store()
     now = now_iso()
@@ -415,6 +431,7 @@ def create_conversation():
     store["activeId"] = item["id"]
     save_conversation_store(store)
     return conversation_payload(store)
+
 
 def select_conversation(conversation_id):
     store = get_conversation_store()
@@ -425,6 +442,7 @@ def select_conversation(conversation_id):
     save_conversation_store(store)
     return conversation_payload(store)
 
+
 def pin_conversation(conversation_id, pinned):
     store = get_conversation_store()
     conversation_id = clean_text(conversation_id, 64)
@@ -434,6 +452,7 @@ def pin_conversation(conversation_id, pinned):
     item["pinned"] = bool(pinned)
     save_conversation_store(store)
     return conversation_payload(store)
+
 
 def delete_conversation(conversation_id):
     store = get_conversation_store()
@@ -447,7 +466,8 @@ def delete_conversation(conversation_id):
     save_conversation_store(store)
     return conversation_payload(store)
 
-# -------------------- API 通道管理（带缓存和损坏恢复） --------------------
+
+# -------------------- API 通道管理 --------------------
 def read_providers():
     """读取 providers，带缓存"""
     with PROVIDERS_LOCK:
@@ -462,7 +482,6 @@ def read_providers():
         data = safe_read_json(PROVIDERS_PATH, [])
         if not isinstance(data, list):
             data = []
-        # 数据迁移
         for p in data:
             if "apiHost" not in p and "apiBaseUrl" in p:
                 p["apiHost"] = p.pop("apiBaseUrl")
@@ -471,6 +490,7 @@ def read_providers():
         PROVIDERS_CACHE["mtime"] = mtime
         PROVIDERS_CACHE["data"] = data
         return data
+
 
 def write_providers(data):
     with PROVIDERS_LOCK:
@@ -482,11 +502,14 @@ def write_providers(data):
         except FileNotFoundError:
             PROVIDERS_CACHE["mtime"] = None
 
+
 def list_providers():
     return read_providers()
 
+
 def save_providers(providers):
     write_providers(providers)
+
 
 def public_provider(p):
     return {
@@ -500,6 +523,7 @@ def public_provider(p):
         "apiKeySet": bool(p.get("apiKey")),
     }
 
+
 def get_active_provider():
     providers = list_providers()
     enabled = [p for p in providers if p.get("enabled") and p.get("apiKey")]
@@ -508,21 +532,37 @@ def get_active_provider():
     default = next((p for p in enabled if p.get("isDefault")), None)
     return default or enabled[0]
 
+
 def get_provider_by_id(provider_id):
     for p in list_providers():
         if p["id"] == provider_id:
             return p
     return None
 
+
+def validate_api_host(api_host):
+    """验证 apiHost 格式"""
+    if not api_host:
+        raise ValueError("接口地址不能为空")
+    api_host = api_host.strip()
+    if not (api_host.startswith("http://") or api_host.startswith("https://")):
+        raise ValueError("接口地址必须以 http:// 或 https:// 开头")
+    return api_host
+
+
 def create_provider(data):
     providers = list_providers()
     now = now_iso()
+    api_host = validate_api_host(data.get("apiHost", ""))
+    api_key = data.get("apiKey", "")
+    if not api_key:
+        raise ValueError("API Key 不能为空")
     provider = {
         "id": secrets.token_hex(12),
         "name": clean_text(data.get("name", "新通道"), 60),
-        "apiHost": strip_trailing_slash(data.get("apiHost", "")),
+        "apiHost": strip_trailing_slash(api_host),
         "apiPath": clean_text(data.get("apiPath", ""), 120),
-        "apiKey": data.get("apiKey", ""),
+        "apiKey": api_key,
         "aiModel": clean_text(data.get("aiModel", "gpt-4o-mini"), 80),
         "enabled": data.get("enabled", True),
         "isDefault": data.get("isDefault", False),
@@ -538,12 +578,14 @@ def create_provider(data):
     save_providers(providers)
     return provider
 
+
 def update_provider(provider_id, data):
     providers = list_providers()
     for p in providers:
         if p.get("id") == provider_id:
             p["name"] = clean_text(data.get("name", p["name"]), 60)
-            p["apiHost"] = strip_trailing_slash(data.get("apiHost", p["apiHost"]))
+            if data.get("apiHost"):
+                p["apiHost"] = strip_trailing_slash(validate_api_host(data["apiHost"]))
             p["apiPath"] = clean_text(data.get("apiPath", p.get("apiPath", "")), 120)
             if data.get("apiKey") is not None and data["apiKey"] != "":
                 p["apiKey"] = data["apiKey"]
@@ -559,6 +601,7 @@ def update_provider(provider_id, data):
             return p
     return None
 
+
 def delete_provider(provider_id):
     providers = list_providers()
     new_list = [p for p in providers if p.get("id") != provider_id]
@@ -569,6 +612,7 @@ def delete_provider(provider_id):
             new_list[0]["isDefault"] = True
     save_providers(new_list)
     return True
+
 
 def fetch_provider_models(provider):
     api_host = provider.get("apiHost")
@@ -590,11 +634,13 @@ def fetch_provider_models(provider):
     except Exception as e:
         raise ValueError(f"获取模型失败: {str(e)}")
 
+
 def chat_completions_url(base_url):
     host = strip_trailing_slash(base_url)
     if host.endswith("/chat/completions"):
         return host
     return f"{host}/v1/chat/completions"
+
 
 def models_url(base_url):
     endpoint = chat_completions_url(base_url)
@@ -606,8 +652,11 @@ def models_url(base_url):
         path = path + "/models"
     return urllib.parse.urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
 
+
 # -------------------- HTTP Handler --------------------
 class Handler(BaseHTTPRequestHandler):
+    # FIX: 使用 HTTP/1.0 确保 Connection: close 生效
+    protocol_version = "HTTP/1.0"
     server_version = "MinAI/2.1"
 
     def log_message(self, fmt, *args):
@@ -625,7 +674,10 @@ class Handler(BaseHTTPRequestHandler):
             self.serve_static(parsed.path)
         except Exception as e:
             print(f"[ERROR] GET {self.path}: {e}")
-            self.send_json(500, {"error": "服务器内部错误"})
+            try:
+                self.send_json(500, {"error": "服务器内部错误"})
+            except:
+                pass
 
     def do_POST(self):
         try:
@@ -633,7 +685,10 @@ class Handler(BaseHTTPRequestHandler):
             self.route_api("POST", parsed.path)
         except Exception as e:
             print(f"[ERROR] POST {self.path}: {e}")
-            self.send_json(500, {"error": "服务器内部错误"})
+            try:
+                self.send_json(500, {"error": "服务器内部错误"})
+            except:
+                pass
 
     def do_PUT(self):
         try:
@@ -641,7 +696,10 @@ class Handler(BaseHTTPRequestHandler):
             self.route_api("PUT", parsed.path)
         except Exception as e:
             print(f"[ERROR] PUT {self.path}: {e}")
-            self.send_json(500, {"error": "服务器内部错误"})
+            try:
+                self.send_json(500, {"error": "服务器内部错误"})
+            except:
+                pass
 
     def do_DELETE(self):
         try:
@@ -649,7 +707,10 @@ class Handler(BaseHTTPRequestHandler):
             self.route_api("DELETE", parsed.path)
         except Exception as e:
             print(f"[ERROR] DELETE {self.path}: {e}")
-            self.send_json(500, {"error": "服务器内部错误"})
+            try:
+                self.send_json(500, {"error": "服务器内部错误"})
+            except:
+                pass
 
     def route_api(self, method, path):
         # 聊天核心
@@ -701,10 +762,18 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 provider = create_provider(body)
                 self.send_json(201, {"provider": public_provider(provider)})
+            except ValueError as e:
+                self.send_json(400, {"error": str(e)})
             except Exception as e:
                 print(f"[ERROR] create_provider: {e}")
-                self.send_json(400, {"error": str(e)})
+                self.send_json(500, {"error": str(e)})
             return
+
+        # FIX: 优先匹配 /api/providers/test-connection，避免与 /api/providers/{id} 冲突
+        if method == "POST" and path == "/api/providers/test-connection":
+            self.handle_test_provider()
+            return
+
         if path.startswith("/api/providers/"):
             parts = path.split("/")
             if len(parts) == 4:  # /api/providers/{id}
@@ -717,6 +786,8 @@ class Handler(BaseHTTPRequestHandler):
                             self.send_json(200, {"provider": public_provider(updated)})
                         else:
                             self.send_json(404, {"error": "通道不存在"})
+                    except ValueError as e:
+                        self.send_json(400, {"error": str(e)})
                     except Exception as e:
                         print(f"[ERROR] update_provider: {e}")
                         self.send_json(500, {"error": str(e)})
@@ -744,9 +815,7 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception as e:
                     self.send_json(500, {"error": str(e)})
                 return
-            if len(parts) == 5 and parts[4] == "test" and method == "POST":
-                self.handle_test_provider()
-                return
+
         self.send_json(404, {"error": "Not found"})
 
     def handle_test_provider(self):
@@ -813,10 +882,10 @@ class Handler(BaseHTTPRequestHandler):
         try:
             with urllib.request.urlopen(req, timeout=300) as response:
                 if stream:
+                    # FIX: HTTP/1.0 下 Connection: close 自动生效
                     self.send_response(200)
                     self.send_header("Content-Type", "text/event-stream")
                     self.send_header("Cache-Control", "no-cache")
-                    self.send_header("Connection", "close")
                     self.end_headers()
 
                     decoder = codecs.getincrementaldecoder('utf-8')()
@@ -847,6 +916,7 @@ class Handler(BaseHTTPRequestHandler):
                         except:
                             pass
 
+                    # 刷新解码器中可能剩余的字符
                     try:
                         remaining = decoder.decode(b'', final=True)
                         for line in remaining.split("\n"):
@@ -865,6 +935,7 @@ class Handler(BaseHTTPRequestHandler):
                     except:
                         pass
 
+                    # 发送明确的结束标记
                     self.wfile.write(b"data: [DONE]\n\n")
                     self.wfile.flush()
 
@@ -876,8 +947,8 @@ class Handler(BaseHTTPRequestHandler):
                         self.wfile.write(f"data: {meta}\n\n".encode())
                         self.wfile.flush()
 
-                    self.close_connection = True
                 else:
+                    # 非流式模式
                     upstream = json.loads(response.read().decode("utf-8"))
                     choice = (upstream.get("choices") or [{}])[0]
                     message = choice.get("message") or {}
@@ -1040,15 +1111,15 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+
 def main():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     GENERATED_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 初始化对话文件（如果不存在或损坏）
+    # 初始化对话文件
     if not CONVERSATIONS_PATH.exists():
         atomic_write_json(CONVERSATIONS_PATH, {"activeId": "", "items": []})
     else:
-        # 验证现有文件是否有效
         try:
             data = safe_read_json(CONVERSATIONS_PATH, None)
             if data is None:
@@ -1093,6 +1164,7 @@ def main():
     server = ThreadingHTTPServer((host, port), Handler)
     print(f"MinAI running at http://{host}:{port}")
     server.serve_forever()
+
 
 if __name__ == "__main__":
     main()
