@@ -1054,7 +1054,6 @@
             const headerTitle = $('headerTitle');
 
             // ---------- API 工具（真实 fetch） ----------
-            // 修复：处理空响应体，避免 DELETE 等请求返回空内容时 res.json() 抛异常
             async function api(url, options = {}) {
                 const res = await fetch(url, {
                     headers: { 'Content-Type': 'application/json' },
@@ -1140,11 +1139,9 @@
                 }
             }
 
-            // 修复：增加空对话保护，避免无意义地创建空对话记录
             async function newConversation() {
                 try {
                     const hasUserMessages = messagesState.some(m => m.role === 'user');
-                    // 如果当前对话没有任何用户消息，直接清空复用，不调用 API 创建新记录
                     if (!hasUserMessages && currentConversationId) {
                         messagesState = [];
                         renderMessages();
@@ -1268,12 +1265,10 @@
                 return div.innerHTML;
             }
 
-            // 移除所有流式光标
             function removeAllCursors() {
                 document.querySelectorAll('.streaming-cursor').forEach(el => el.remove());
             }
 
-            // 模拟流式渲染（用于非SSE响应）
             async function simulateStream(fullText, msgIndex) {
                 const msgEl = messagesInner.querySelector(`.msg-row[data-msg-index="${msgIndex}"]`);
                 if (!msgEl) return;
@@ -1333,7 +1328,6 @@
                         signal: streamAbortController.signal,
                     });
 
-                    // 修复：读取详细的错误响应
                     if (!res.ok) {
                         const errorData = await res.json().catch(() => ({}));
                         throw new Error(errorData.error || `API 请求失败 (${res.status})`);
@@ -1343,20 +1337,24 @@
                     let replyText = '';
 
                     if (contentType.includes('text/event-stream') || contentType.includes('application/x-ndjson')) {
-                        // 真正流式响应
                         const reader = res.body.getReader();
                         const decoder = new TextDecoder();
                         let buffer = '';
+                        let streamFinished = false;
+
                         while (true) {
                             const { done, value } = await reader.read();
                             if (done) {
-                                // 修复：处理 buffer 中剩余的最后几行数据
+                                // 处理 buffer 中剩余的最后几行数据
                                 if (buffer.trim()) {
                                     const lines = buffer.trim().split('\n');
                                     for (const line of lines) {
                                         if (line.startsWith('data: ')) {
                                             const data = line.slice(6).trim();
-                                            if (data === '[DONE]') continue;
+                                            if (data === '[DONE]') {
+                                                streamFinished = true;
+                                                continue;
+                                            }
                                             try {
                                                 const parsed = JSON.parse(data);
                                                 const delta = parsed.choices?.[0]?.delta?.content || parsed.content || '';
@@ -1367,13 +1365,18 @@
                                 }
                                 break;
                             }
+
                             buffer += decoder.decode(value, { stream: true });
                             const lines = buffer.split('\n');
                             buffer = lines.pop() || '';
+
                             for (const line of lines) {
                                 if (line.startsWith('data: ')) {
                                     const data = line.slice(6).trim();
-                                    if (data === '[DONE]') continue;
+                                    if (data === '[DONE]') {
+                                        streamFinished = true;
+                                        continue;
+                                    }
                                     try {
                                         const parsed = JSON.parse(data);
                                         const delta = parsed.choices?.[0]?.delta?.content || parsed.content || '';
@@ -1387,10 +1390,17 @@
                                     } catch {}
                                 }
                             }
+
+                            // 保险：收到 [DONE] 后再读一次确保没有更多数据，避免后端 keep-alive 导致挂起
+                            if (streamFinished) {
+                                // 给后端一点时间发送剩余数据，然后强制结束
+                                await new Promise(r => setTimeout(r, 100));
+                                try { reader.cancel(); } catch {}
+                                break;
+                            }
                         }
                         messagesState[aiIndex].content = replyText;
                     } else {
-                        // 普通JSON响应
                         const data = await res.json();
                         if (data.error) throw new Error(data.error);
                         replyText = data.reply || data.content || '';
@@ -1410,7 +1420,6 @@
                         messagesState[aiIndex].content = '❌ 错误: ' + e.message;
                     }
                 } finally {
-                    // 修复：确保状态重置、UI 同步、光标清理、输入框恢复聚焦
                     isStreaming = false;
                     streamAbortController = null;
                     renderMessages();
@@ -1425,16 +1434,23 @@
                 const hasText = userInput.value.trim().length > 0;
                 if (isStreaming) {
                     sendButton.classList.add('active');
-                    sendButton.disabled = true;
+                    sendButton.disabled = false; // 允许点击停止
                     sendButton.textContent = '■';
+                    sendButton.onclick = () => {
+                        if (streamAbortController) {
+                            streamAbortController.abort();
+                        }
+                    };
                 } else if (hasText) {
                     sendButton.classList.add('active');
                     sendButton.disabled = false;
                     sendButton.textContent = '➤';
+                    sendButton.onclick = null;
                 } else {
                     sendButton.classList.remove('active');
                     sendButton.disabled = true;
                     sendButton.textContent = '➤';
+                    sendButton.onclick = null;
                 }
             }
 
@@ -1459,9 +1475,8 @@
                 }
             }
 
-            // 移动端侧栏
             function openMobileSidebar() {
-                if (window.innerWidth <= 768) {
+                if (window.innerWidth <=                 if (window.innerWidth <= 768) {
                     sidePanel.classList.add('open');
                     sidebarBackdrop.classList.add('visible');
                 } else {
@@ -1649,7 +1664,6 @@
                         const id = deleteBtn.dataset.deleteId;
                         if (!confirm('确定删除该对话吗？')) return;
                         try {
-                            // 修复：使用修复后的 api 函数，删除后重新加载完整数据
                             await api('/api/conversations', {
                                 method: 'DELETE',
                                 body: JSON.stringify({ conversationId: id })
