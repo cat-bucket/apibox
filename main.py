@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import base64
+import codecs
 import json
 import mimetypes
 import os
@@ -645,7 +646,6 @@ class Handler(BaseHTTPRequestHandler):
                 return
             provider = {"apiHost": api_host, "apiKey": api_key}
         try:
-            # 简单测试：请求 models 列表
             models = fetch_provider_models(provider)
             self.send_json(200, {"success": True, "models": models[:5]})
         except Exception as e:
@@ -654,7 +654,6 @@ class Handler(BaseHTTPRequestHandler):
     def handle_chat(self):
         """支持流式与非流式两种模式"""
         body = self.read_json_body()
-        # 确定使用的 provider
         provider_id = body.get("providerId")
         provider = None
         if provider_id:
@@ -672,7 +671,7 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         model = body.get("model") or provider["aiModel"]
-        stream = body.get("stream", True)  # 默认开启流式
+        stream = body.get("stream", True)
         system_prompt = os.getenv("SYSTEM_PROMPT", "你是一个专业、简洁、友好的 AI 助手。请优先用中文回答。")
         payload = {
             "model": model,
@@ -696,41 +695,76 @@ class Handler(BaseHTTPRequestHandler):
         try:
             with urllib.request.urlopen(req, timeout=300) as response:
                 if stream:
+                    # 关键修复：SSE 响应必须关闭连接，否则前端 ReadableStream 永远挂起
                     self.send_response(200)
                     self.send_header("Content-Type", "text/event-stream")
                     self.send_header("Cache-Control", "no-cache")
-                    self.send_header("Connection", "keep-alive")
+                    # 明确关闭连接，让前端知道响应结束
+                    self.send_header("Connection", "close")
                     self.end_headers()
-                    # 读取流式数据并直接转发
+
+                    # 使用增量解码器避免中文 UTF-8 被 chunk 边界切分
+                    decoder = codecs.getincrementaldecoder('utf-8')()
                     full_reply = ""
+
                     while True:
-                        chunk = response.read(1024)
+                        chunk = response.read(4096)
                         if not chunk:
                             break
                         self.wfile.write(chunk)
                         self.wfile.flush()
-                        # 解析出文本内容用于持久化
+
                         try:
-                            decoded = chunk.decode("utf-8")
+                            decoded = decoder.decode(chunk)
                             for line in decoded.split("\n"):
+                                line = line.strip()
                                 if line.startswith("data: "):
                                     data_str = line[6:].strip()
                                     if data_str == "[DONE]":
                                         continue
-                                    data = json.loads(data_str)
-                                    content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
-                                    full_reply += content
+                                    try:
+                                        data = json.loads(data_str)
+                                        content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                                        if content:
+                                            full_reply += content
+                                    except:
+                                        pass
                         except:
                             pass
-                    # 流结束后更新对话存储
+
+                    # 刷新解码器中可能剩余的字符
+                    try:
+                        remaining = decoder.decode(b'', final=True)
+                        for line in remaining.split("\n"):
+                            line = line.strip()
+                            if line.startswith("data: "):
+                                data_str = line[6:].strip()
+                                if data_str == "[DONE]":
+                                    continue
+                                try:
+                                    data = json.loads(data_str)
+                                    content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                                    if content:
+                                        full_reply += content
+                                except:
+                                    pass
+                    except:
+                        pass
+
+                    # 发送明确的结束标记，然后关闭连接
+                    self.wfile.write(b"data: [DONE]\n\n")
+                    self.wfile.flush()
+
                     if full_reply:
                         assistant_msg = {"role": "assistant", "content": full_reply}
                         conversation_id = body.get("conversationId") or ""
                         result = upsert_conversation(conversation_id, stored_messages + [assistant_msg])
-                        # 发送一个额外的 SSE 事件携带 conversationId (可选)
                         meta = json.dumps({"conversationId": result["conversationId"], "conversations": result["conversations"]})
                         self.wfile.write(f"data: {meta}\n\n".encode())
                         self.wfile.flush()
+
+                    # 双重保险：确保连接关闭
+                    self.close_connection = True
                 else:
                     # 非流式模式
                     upstream = json.loads(response.read().decode("utf-8"))
@@ -767,19 +801,22 @@ class Handler(BaseHTTPRequestHandler):
             "models": [{"id": provider["aiModel"], "name": provider["aiModel"]}]
         })
 
-    # 对话方法（保持原有逻辑）
     def handle_get_conversation(self):
         self.send_json(200, conversation_payload(get_conversation_store()))
+
     def handle_save_conversation(self):
         body = self.read_json_body()
         messages = conversation_messages(body.get("messages"))
         conversation_id = body.get("conversationId") or ""
         result = upsert_conversation(conversation_id, messages)
         self.send_json(200, {"ok": True, **result})
+
     def handle_get_conversations(self):
         self.send_json(200, conversation_payload(get_conversation_store()))
+
     def handle_new_conversation(self):
         self.send_json(200, create_conversation())
+
     def handle_select_conversation(self):
         body = self.read_json_body()
         cid = body.get("conversationId")
@@ -791,6 +828,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(404, {"error": "对话不存在"})
             return
         self.send_json(200, result)
+
     def handle_pin_conversation(self):
         body = self.read_json_body()
         result = pin_conversation(body.get("conversationId"), body.get("pinned", False))
@@ -798,6 +836,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(404, {"error": "对话不存在"})
             return
         self.send_json(200, result)
+
     def handle_delete_conversation(self):
         body = self.read_json_body()
         result = delete_conversation(body.get("conversationId"))
@@ -806,7 +845,6 @@ class Handler(BaseHTTPRequestHandler):
             return
         self.send_json(200, result)
 
-    # 静态文件服务（带内存缓存）
     def serve_static(self, path, head_only=False):
         if path == "/":
             path = "/index.html"
@@ -827,7 +865,6 @@ class Handler(BaseHTTPRequestHandler):
                 return
             file_path = PUBLIC_DIR / "index.html"
 
-        # 缓存文件内容
         body = cached_static_file(file_path)
         if body is None:
             body = file_path.read_bytes()
