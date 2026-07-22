@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import base64
 import codecs
-import http.cookiejar
 import json
 import mimetypes
 import os
 import posixpath
 import secrets
-import ssl
 import threading
 import time
 import urllib.error
@@ -40,6 +38,14 @@ IMAGE_EXTENSIONS = {
     "image/jpg": ".jpg",
     "image/webp": ".webp",
     "image/gif": ".gif",
+}
+
+# -------------------- 统一请求头（防 403 核心优化） --------------------
+# 部分站点（Cloudflare / WAF）会拦截默认的 "Python-urllib/3.x" User-Agent，
+# 因此所有向上游 API 发起的请求统一使用带浏览器特征的 UA。
+DEFAULT_API_HEADERS = {
+    "User-Agent": "MinAI/2.1 (Compatible; OpenAI-Client/1.0.0; Python-urllib)",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
 }
 
 
@@ -144,71 +150,6 @@ def now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-# -------------------- 网络请求增强（解决 403） --------------------
-def get_ssl_context():
-    """支持通过环境变量禁用 SSL 证书验证（解决部分自签名/中间件 403/握手失败）"""
-    if os.getenv("DISABLE_SSL_VERIFY", "").lower() in ("1", "true", "yes"):
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        return ctx
-    return None
-
-
-def build_url_opener():
-    """构建支持 Cookie、代理、SSL、重定向的 URL Opener"""
-    handlers = []
-
-    # Cookie 支持：自动携带/接收 Cookie，解决部分站点会话校验
-    handlers.append(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
-
-    # 代理支持：自动读取环境变量
-    proxy = (
-        os.getenv("HTTP_PROXY")
-        or os.getenv("http_proxy")
-        or os.getenv("HTTPS_PROXY")
-        or os.getenv("https_proxy")
-    )
-    if proxy:
-        handlers.append(urllib.request.ProxyHandler({"http": proxy, "https": proxy}))
-
-    # SSL 上下文
-    ssl_ctx = get_ssl_context()
-    if ssl_ctx:
-        handlers.append(urllib.request.HTTPSHandler(context=ssl_ctx))
-
-    return urllib.request.build_opener(*handlers)
-
-
-# 全局 URL Opener：所有外部请求统一使用
-URL_OPENER = build_url_opener()
-
-
-def make_browser_request(url, headers=None, method="GET", data=None):
-    """
-    构建更像真实浏览器的请求，用于访问可能启用反爬/防盗链的外部资源。
-    重点解决因 User-Agent、Referer、Accept-Language 缺失导致的 403。
-    """
-    parsed = urllib.parse.urlparse(url)
-    # 使用目标站点自身作为 Referer，降低被防盗链拦截的概率
-    referer = f"{parsed.scheme}://{parsed.netloc}/"
-
-    default_headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        "Accept": "image/avif,image/webp,image/png,image/jpeg,image/*,*/*;q=0.8",
-        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-        "Referer": referer,
-        "Connection": "keep-alive",
-        "Sec-Fetch-Dest": "image",
-        "Sec-Fetch-Mode": "no-cors",
-        "Sec-Fetch-Site": "cross-site",
-    }
-    if headers:
-        default_headers.update(headers)
-
-    return urllib.request.Request(url, headers=default_headers, method=method, data=data)
-
-
 # -------------------- 图片处理 --------------------
 def detect_image_extension(raw, content_type="", source_url=""):
     mime_type = str(content_type or "").split(";", 1)[0].strip().lower()
@@ -249,14 +190,20 @@ def store_data_image(image):
 
 
 def store_remote_image(url):
-    req = make_browser_request(url)
-    with URL_OPENER.open(req, timeout=90) as response:
+    request = urllib.request.Request(
+        url,
+        headers={
+            **DEFAULT_API_HEADERS,
+            "Accept": "image/avif,image/webp,image/png,image/jpeg,image/*,*/*;q=0.8",
+            "User-Agent": "MinAI/1.0 image fetcher",
+        },
+        method="GET",
+    )
+    with urllib.request.urlopen(request, timeout=90) as response:
         raw = response.read(GENERATED_IMAGE_MAX_BYTES + 1)
         if len(raw) > GENERATED_IMAGE_MAX_BYTES:
             raise ValueError("remote image is too large")
-        extension = detect_image_extension(
-            raw, response.headers.get("Content-Type", ""), url
-        )
+        extension = detect_image_extension(raw, response.headers.get("Content-Type", ""), url)
         if not extension:
             raise ValueError("remote result is not an image")
         return save_generated_image(raw, extension)
@@ -683,17 +630,23 @@ def fetch_provider_models(provider):
         raise ValueError("请先填写 API Host 和 Key")
     url = models_url(api_host)
     req = urllib.request.Request(url, headers={
+        **DEFAULT_API_HEADERS,
         "Accept": "application/json",
         "Authorization": f"Bearer {api_key}",
     }, method="GET")
     try:
-        with URL_OPENER.open(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         models = data.get("data", [])
         if isinstance(models, list):
             return [{"id": m.get("id", ""), "name": m.get("id", "")} for m in models if m.get("id")]
         return []
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", "replace")
+        print(f"[WARN] fetch_provider_models HTTP {e.code}: {body[:500]}")
+        raise ValueError(f"获取模型失败: HTTP {e.code}")
     except Exception as e:
+        print(f"[WARN] fetch_provider_models error: {e}")
         raise ValueError(f"获取模型失败: {str(e)}")
 
 
@@ -935,6 +888,7 @@ class Handler(BaseHTTPRequestHandler):
         req = urllib.request.Request(url,
             data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
             headers={
+                **DEFAULT_API_HEADERS,
                 "Accept": "text/event-stream" if stream else "application/json",
                 "Content-Type": "application/json",
                 "Authorization": f'Bearer {provider["apiKey"]}',
@@ -942,7 +896,7 @@ class Handler(BaseHTTPRequestHandler):
             method="POST",
         )
         try:
-            with URL_OPENER.open(req, timeout=300) as response:
+            with urllib.request.urlopen(req, timeout=300) as response:
                 if stream:
                     # FIX: HTTP/1.0 下 Connection: close 自动生效
                     self.send_response(200)
@@ -1031,8 +985,10 @@ class Handler(BaseHTTPRequestHandler):
             except:
                 error_json = {}
             msg = (error_json.get("error", {}).get("message") or error_json.get("message") or f"上游接口请求失败，状态码 {error.code}")
+            print(f"[WARN] handle_chat HTTP {error.code}: {error_text[:500]}")
             self.send_json(error.code, {"error": msg})
         except Exception as e:
+            print(f"[WARN] handle_chat error: {e}")
             self.send_json(502, {"error": f"无法连接上游 AI 接口: {str(e)}"})
 
     def handle_models(self):
