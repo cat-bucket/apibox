@@ -15,7 +15,7 @@
 
 ## 快速开始
 
-确保手机已经安装 [Termux](https://github.com/termux/termux-app)，然后执行：
+安装termux [Termux](https://github.com/termux/termux-app)
 
 ```bash
 pkg update -y && pkg install python -y
