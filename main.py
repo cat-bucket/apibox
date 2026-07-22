@@ -1,5 +1,5 @@
 
-backend_code = r'''#!/usr/bin/env python3
+main_py = r'''#!/usr/bin/env python3
 import base64
 import codecs
 import json
@@ -29,11 +29,8 @@ MAX_BODY_SIZE = 16 * 1024 * 1024
 GENERATED_IMAGE_MAX_BYTES = 25 * 1024 * 1024
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024
 
-# 文件级锁
 CONVERSATIONS_LOCK = threading.RLock()
 PROVIDERS_LOCK = threading.RLock()
-
-# 内存缓存
 CONVERSATIONS_CACHE = {"mtime": None, "data": None}
 PROVIDERS_CACHE = {"mtime": None, "data": None}
 
@@ -45,9 +42,8 @@ IMAGE_EXTENSIONS = {
     "image/gif": ".gif",
 }
 
-# -------------------- 统一请求头（防 403 核心优化） --------------------
 DEFAULT_API_HEADERS = {
-    "User-Agent": "MinAI/2.1 (Compatible; OpenAI-Client/1.0.0; Python-urllib)",
+    "User-Agent": "APIBox/1.0 (Compatible; OpenAI-Client/1.0.0; Python-urllib)",
     "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
 }
 
@@ -62,7 +58,6 @@ BROWSER_HEADERS = {
 }
 
 
-# -------------------- 静态文件缓存 --------------------
 @lru_cache(maxsize=32)
 def cached_static_file(filepath):
     try:
@@ -71,7 +66,6 @@ def cached_static_file(filepath):
         return None
 
 
-# -------------------- 工具函数 --------------------
 def load_env_file():
     env_path = ROOT / ".env"
     if not env_path.exists():
@@ -90,7 +84,6 @@ load_env_file()
 
 
 def safe_read_json(path, fallback):
-    """安全读取 JSON，损坏时返回 fallback 并尝试恢复"""
     if not path.exists():
         return fallback
     try:
@@ -130,7 +123,6 @@ def safe_read_json(path, fallback):
 
 
 def atomic_write_json(path, data):
-    """原子写入 JSON，带备份"""
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
     tmp_path = path.with_suffix(path.suffix + ".tmp")
@@ -163,7 +155,6 @@ def now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-# -------------------- 图片处理 --------------------
 def detect_image_extension(raw, content_type="", source_url=""):
     mime_type = str(content_type or "").split(";", 1)[0].strip().lower()
     if mime_type in IMAGE_EXTENSIONS:
@@ -208,7 +199,7 @@ def store_remote_image(url):
         headers={
             **DEFAULT_API_HEADERS,
             "Accept": "image/avif,image/webp,image/png,image/jpeg,image/*,*/*;q=0.8",
-            "User-Agent": "MinAI/1.0 image fetcher",
+            "User-Agent": "APIBox/1.0 image fetcher",
         },
         method="GET",
     )
@@ -241,9 +232,7 @@ def persist_image_url(url):
     return ""
 
 
-# -------------------- 文件上传处理 --------------------
 def parse_multipart_form_data(handler):
-    """简易 multipart/form-data 解析器"""
     content_type = handler.headers.get('Content-Type', '')
     if not content_type.startswith('multipart/form-data'):
         return []
@@ -296,7 +285,6 @@ def parse_multipart_form_data(handler):
 
 
 def save_uploaded_file(file_info):
-    """保存上传的文件并返回可访问路径"""
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     ext = Path(file_info['filename']).suffix
     safe_name = f"{int(time.time())}-{secrets.token_hex(6)}{ext}"
@@ -310,22 +298,18 @@ def save_uploaded_file(file_info):
     }
 
 
-# -------------------- 联网搜索（免费 DuckDuckGo 方案） --------------------
 class DDGParser(HTMLParser):
     def __init__(self):
         super().__init__()
         self.results = []
-        self._in_result = False
         self._in_title = False
         self._in_snippet = False
         self._current = {}
         self._link_href = None
-        self._tag_stack = []
 
     def handle_starttag(self, tag, attrs):
         attrs_dict = dict(attrs)
         cls = attrs_dict.get('class', '')
-        self._tag_stack.append((tag, attrs_dict))
         if tag == 'a':
             if 'result__a' in cls:
                 self._in_title = True
@@ -336,8 +320,6 @@ class DDGParser(HTMLParser):
                 self._current = self._current or {"title": "", "url": "", "snippet": ""}
 
     def handle_endtag(self, tag):
-        if self._tag_stack:
-            self._tag_stack.pop()
         if tag == 'a' and self._in_title:
             self._in_title = False
         if tag == 'a' and self._in_snippet:
@@ -354,7 +336,6 @@ class DDGParser(HTMLParser):
 
 
 def duckduckgo_search(query, max_results=5):
-    """使用 DuckDuckGo Lite 进行免费搜索"""
     try:
         url = "https://lite.duckduckgo.com/lite/"
         data = urllib.parse.urlencode({"q": query, "kl": "zh-cn"}).encode()
@@ -368,7 +349,6 @@ def duckduckgo_search(query, max_results=5):
             html = resp.read().decode('utf-8', 'replace')
 
         results = []
-        # 尝试用正则提取结果
         rows = re.findall(
             r'<tr[^>]*>.*?<a[^>]+href="([^"]+)"[^>]*class="[^"]*result__a[^"]*"[^>]*>(.*?)</a>.*?<td[^>]*class="result-snippet"[^>]*>(.*?)</td>.*?</tr>',
             html, re.S | re.I
@@ -383,7 +363,6 @@ def duckduckgo_search(query, max_results=5):
             results.append({"title": title.strip(), "snippet": snippet.strip(), "url": href})
 
         if not results:
-            # 备用解析：更宽松的正则
             links = re.findall(
                 r'<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>(.*?)</a>',
                 html, re.S | re.I
@@ -402,7 +381,6 @@ def duckduckgo_search(query, max_results=5):
                 results.append({"title": title.strip(), "snippet": snippet.strip(), "url": href})
 
         if not results:
-            # 再尝试通用解析
             parser = DDGParser()
             parser.feed(html)
             for r in parser.results[:max_results]:
@@ -416,7 +394,6 @@ def duckduckgo_search(query, max_results=5):
 
 
 def build_search_context(query, results):
-    """将搜索结果构建为模型可用的上下文"""
     if not results:
         return ""
     lines = ["以下是基于用户问题的网络搜索结果，请在回答时参考（如果与问题无关请忽略）："]
@@ -428,7 +405,6 @@ def build_search_context(query, results):
     return "\n".join(lines)
 
 
-# -------------------- 消息标准化 --------------------
 def normalize_messages(messages):
     if not isinstance(messages, list):
         return []
@@ -475,7 +451,6 @@ def normalize_messages(messages):
     return normalized[-16:]
 
 
-# -------------------- 对话存储 --------------------
 def conversation_messages(messages):
     if not isinstance(messages, list):
         return []
@@ -680,9 +655,7 @@ def delete_conversation(conversation_id):
     return conversation_payload(store)
 
 
-# -------------------- API 通道管理 --------------------
 def read_providers():
-    """读取 providers，带缓存"""
     with PROVIDERS_LOCK:
         try:
             mtime = PROVIDERS_PATH.stat().st_mtime_ns
@@ -754,7 +727,6 @@ def get_provider_by_id(provider_id):
 
 
 def validate_api_host(api_host):
-    """验证 apiHost 格式"""
     if not api_host:
         raise ValueError("接口地址不能为空")
     api_host = api_host.strip()
@@ -872,10 +844,9 @@ def models_url(base_url):
     return urllib.parse.urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
 
 
-# -------------------- HTTP Handler --------------------
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
-    server_version = "MinAI/2.1"
+    server_version = "APIBox/1.0"
 
     def log_message(self, fmt, *args):
         print(f"{self.client_address[0]} - {self.log_date_time_string()} {fmt % args}")
@@ -934,28 +905,22 @@ class Handler(BaseHTTPRequestHandler):
                 pass
 
     def route_api(self, method, path):
-        # 聊天核心
         if method == "POST" and path == "/api/chat":
             self.handle_chat()
             return
         if method == "GET" and path == "/api/public-config":
-            self.send_json(200, {"siteTitle": "MinAI", "requireLogin": False})
+            self.send_json(200, {"siteTitle": "APIBox", "requireLogin": False})
             return
         if method == "GET" and path == "/api/models":
             self.handle_models()
             return
-
-        # 文件上传
         if method == "POST" and path == "/api/upload":
             self.handle_upload()
             return
-
-        # 搜索
         if method == "POST" and path == "/api/search":
             self.handle_search()
             return
 
-        # 对话接口
         if path == "/api/conversations/current":
             if method == "GET":
                 self.handle_get_conversation()
@@ -979,7 +944,6 @@ class Handler(BaseHTTPRequestHandler):
             self.handle_delete_conversation()
             return
 
-        # 通道管理
         if method == "GET" and path == "/api/providers":
             try:
                 providers = list_providers()
@@ -1049,7 +1013,6 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json(404, {"error": "Not found"})
 
     def handle_upload(self):
-        """处理文件上传"""
         try:
             files = parse_multipart_form_data(self)
             if not files:
@@ -1067,7 +1030,6 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(500, {"error": "上传失败"})
 
     def handle_search(self):
-        """处理联网搜索请求"""
         body = self.read_json_body()
         query = clean_text(body.get("query"), 500)
         if not query:
@@ -1081,7 +1043,6 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(500, {"error": f"搜索失败: {str(e)}"})
 
     def handle_test_provider(self):
-        """测试指定通道的连接"""
         body = self.read_json_body()
         provider_id = body.get("providerId")
         provider = None
@@ -1101,7 +1062,6 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(500, {"error": str(e)})
 
     def handle_chat(self):
-        """支持流式与非流式两种模式，集成联网搜索"""
         body = self.read_json_body()
         provider_id = body.get("providerId")
         provider = None
@@ -1119,7 +1079,6 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(400, {"error": "请输入消息内容。"})
             return
 
-        # 联网搜索集成
         enable_search = body.get("search", False)
         system_prompt = os.getenv("SYSTEM_PROMPT", "你是一个专业、简洁、友好的 AI 助手。请优先用中文回答。")
         if enable_search and messages:
@@ -1426,7 +1385,6 @@ def main():
     GENERATED_DIR.mkdir(parents=True, exist_ok=True)
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 初始化对话文件
     if not CONVERSATIONS_PATH.exists():
         atomic_write_json(CONVERSATIONS_PATH, {"activeId": "", "items": []})
     else:
@@ -1439,7 +1397,6 @@ def main():
             print(f"[WARN] 验证 conversations.json 失败: {e}")
             atomic_write_json(CONVERSATIONS_PATH, {"activeId": "", "items": []})
 
-    # 初始化通道文件
     if not PROVIDERS_PATH.exists():
         env_host = os.getenv("API_BASE_URL", "")
         env_key = os.getenv("API_KEY", "")
@@ -1472,7 +1429,7 @@ def main():
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "3000"))
     server = ThreadingHTTPServer((host, port), Handler)
-    print(f"MinAI running at http://{host}:{port}")
+    print(f"APIBox running at http://{host}:{port}")
     server.serve_forever()
 
 
@@ -1480,7 +1437,7 @@ if __name__ == "__main__":
     main()
 '''
 
-with open('/mnt/agents/output/minai_server.py', 'w', encoding='utf-8') as f:
-    f.write(backend_code)
+with open('/mnt/agents/output/main.py', 'w', encoding='utf-8') as f:
+    f.write(main_py)
 
-print("后端代码已保存，长度:", len(backend_code))
+print("main.py saved, length:", len(main_py))
