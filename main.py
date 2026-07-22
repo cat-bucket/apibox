@@ -1,5 +1,4 @@
 
-main_py = r'''#!/usr/bin/env python3
 import base64
 import codecs
 import json
@@ -1435,6 +1434,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-'''
 
 
