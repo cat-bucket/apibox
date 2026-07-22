@@ -1,5 +1,4 @@
 
-# 先写后端代码，保存为 minai_server.py
 backend_code = r'''#!/usr/bin/env python3
 import base64
 import codecs
