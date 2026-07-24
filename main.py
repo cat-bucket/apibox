@@ -1,18 +1,16 @@
-
+#!/usr/bin/env python3
 import base64
 import codecs
 import json
 import mimetypes
 import os
 import posixpath
-import re
 import secrets
 import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from html.parser import HTMLParser
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from functools import lru_cache
@@ -21,15 +19,16 @@ ROOT = Path(__file__).resolve().parent
 PUBLIC_DIR = ROOT / "public"
 DATA_DIR = ROOT / "data"
 GENERATED_DIR = DATA_DIR / "generated"
-UPLOAD_DIR = DATA_DIR / "uploads"
 CONVERSATIONS_PATH = DATA_DIR / "conversations.json"
 PROVIDERS_PATH = DATA_DIR / "providers.json"
 MAX_BODY_SIZE = 16 * 1024 * 1024
 GENERATED_IMAGE_MAX_BYTES = 25 * 1024 * 1024
-MAX_UPLOAD_SIZE = 50 * 1024 * 1024
 
+# 文件级锁
 CONVERSATIONS_LOCK = threading.RLock()
 PROVIDERS_LOCK = threading.RLock()
+
+# 内存缓存
 CONVERSATIONS_CACHE = {"mtime": None, "data": None}
 PROVIDERS_CACHE = {"mtime": None, "data": None}
 
@@ -41,22 +40,16 @@ IMAGE_EXTENSIONS = {
     "image/gif": ".gif",
 }
 
+# -------------------- 统一请求头（防 403 核心优化） --------------------
+# 部分站点（Cloudflare / WAF）会拦截默认的 "Python-urllib/3.x" User-Agent，
+# 因此所有向上游 API 发起的请求统一使用带浏览器特征的 UA。
 DEFAULT_API_HEADERS = {
-    "User-Agent": "APIBox/1.0 (Compatible; OpenAI-Client/1.0.0; Python-urllib)",
+    "User-Agent": "MinAI/2.1 (Compatible; OpenAI-Client/1.0.0; Python-urllib)",
     "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
 }
 
-BROWSER_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-    "Accept-Encoding": "gzip, deflate, br",
-    "DNT": "1",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-}
 
-
+# -------------------- 静态文件缓存 --------------------
 @lru_cache(maxsize=32)
 def cached_static_file(filepath):
     try:
@@ -65,6 +58,7 @@ def cached_static_file(filepath):
         return None
 
 
+# -------------------- 工具函数 --------------------
 def load_env_file():
     env_path = ROOT / ".env"
     if not env_path.exists():
@@ -83,6 +77,7 @@ load_env_file()
 
 
 def safe_read_json(path, fallback):
+    """安全读取 JSON，损坏时返回 fallback 并尝试恢复"""
     if not path.exists():
         return fallback
     try:
@@ -122,6 +117,7 @@ def safe_read_json(path, fallback):
 
 
 def atomic_write_json(path, data):
+    """原子写入 JSON，带备份"""
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
     tmp_path = path.with_suffix(path.suffix + ".tmp")
@@ -154,6 +150,7 @@ def now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
+# -------------------- 图片处理 --------------------
 def detect_image_extension(raw, content_type="", source_url=""):
     mime_type = str(content_type or "").split(";", 1)[0].strip().lower()
     if mime_type in IMAGE_EXTENSIONS:
@@ -198,7 +195,7 @@ def store_remote_image(url):
         headers={
             **DEFAULT_API_HEADERS,
             "Accept": "image/avif,image/webp,image/png,image/jpeg,image/*,*/*;q=0.8",
-            "User-Agent": "APIBox/1.0 image fetcher",
+            "User-Agent": "MinAI/1.0 image fetcher",
         },
         method="GET",
     )
@@ -231,179 +228,7 @@ def persist_image_url(url):
     return ""
 
 
-def parse_multipart_form_data(handler):
-    content_type = handler.headers.get('Content-Type', '')
-    if not content_type.startswith('multipart/form-data'):
-        return []
-    boundary = ''
-    for part in content_type.split(';'):
-        part = part.strip()
-        if part.startswith('boundary='):
-            boundary = part[9:].strip('"').strip("'")
-            break
-    if not boundary:
-        return []
-    try:
-        length = int(handler.headers.get('Content-Length', '0'))
-    except ValueError:
-        length = 0
-    if length > MAX_UPLOAD_SIZE:
-        raise ValueError("上传文件过大")
-    raw = handler.rfile.read(length) if length else b''
-    delimiter = ('--' + boundary).encode()
-    parts = raw.split(delimiter)
-    files = []
-    for part in parts[1:-1]:
-        if b'\r\n\r\n' not in part:
-            continue
-        headers_raw, body = part.split(b'\r\n\r\n', 1)
-        headers = headers_raw.decode('utf-8', 'replace').split('\r\n')
-        filename = None
-        name = None
-        content_type_file = 'application/octet-stream'
-        for h in headers:
-            if h.lower().startswith('content-disposition'):
-                for attr in h.split(';'):
-                    attr = attr.strip()
-                    if attr.startswith('name='):
-                        name = attr[5:].strip('"').strip("'")
-                    elif attr.startswith('filename='):
-                        filename = attr[9:].strip('"').strip("'")
-            elif h.lower().startswith('content-type'):
-                content_type_file = h.split(':', 1)[1].strip()
-        if filename and body:
-            if body.endswith(b'\r\n'):
-                body = body[:-2]
-            files.append({
-                'field': name,
-                'filename': filename,
-                'type': content_type_file,
-                'data': body,
-            })
-    return files
-
-
-def save_uploaded_file(file_info):
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    ext = Path(file_info['filename']).suffix
-    safe_name = f"{int(time.time())}-{secrets.token_hex(6)}{ext}"
-    file_path = UPLOAD_DIR / safe_name
-    file_path.write_bytes(file_info['data'])
-    return {
-        "url": f"/uploads/{safe_name}",
-        "name": file_info['filename'],
-        "type": file_info['type'],
-        "size": len(file_info['data']),
-    }
-
-
-class DDGParser(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.results = []
-        self._in_title = False
-        self._in_snippet = False
-        self._current = {}
-        self._link_href = None
-
-    def handle_starttag(self, tag, attrs):
-        attrs_dict = dict(attrs)
-        cls = attrs_dict.get('class', '')
-        if tag == 'a':
-            if 'result__a' in cls:
-                self._in_title = True
-                self._link_href = attrs_dict.get('href', '')
-                self._current = {"title": "", "url": self._link_href, "snippet": ""}
-            elif 'result__snippet' in cls:
-                self._in_snippet = True
-                self._current = self._current or {"title": "", "url": "", "snippet": ""}
-
-    def handle_endtag(self, tag):
-        if tag == 'a' and self._in_title:
-            self._in_title = False
-        if tag == 'a' and self._in_snippet:
-            self._in_snippet = False
-            if self._current and (self._current.get('title') or self._current.get('snippet')):
-                self.results.append(self._current)
-                self._current = None
-
-    def handle_data(self, data):
-        if self._in_title and self._current is not None:
-            self._current['title'] += data
-        elif self._in_snippet and self._current is not None:
-            self._current['snippet'] += data
-
-
-def duckduckgo_search(query, max_results=5):
-    try:
-        url = "https://lite.duckduckgo.com/lite/"
-        data = urllib.parse.urlencode({"q": query, "kl": "zh-cn"}).encode()
-        req = urllib.request.Request(url, data=data, method="POST", headers={
-            **BROWSER_HEADERS,
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Referer": "https://lite.duckduckgo.com/",
-            "Origin": "https://lite.duckduckgo.com",
-        })
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            html = resp.read().decode('utf-8', 'replace')
-
-        results = []
-        rows = re.findall(
-            r'<tr[^>]*>.*?<a[^>]+href="([^"]+)"[^>]*class="[^"]*result__a[^"]*"[^>]*>(.*?)</a>.*?<td[^>]*class="result-snippet"[^>]*>(.*?)</td>.*?</tr>',
-            html, re.S | re.I
-        )
-        for href, title, snippet in rows[:max_results]:
-            title = re.sub(r'<[^>]+>', '', title)
-            snippet = re.sub(r'<[^>]+>', '', snippet)
-            if href.startswith('//'):
-                href = 'https:' + href
-            elif href.startswith('/'):
-                href = 'https://duckduckgo.com' + href
-            results.append({"title": title.strip(), "snippet": snippet.strip(), "url": href})
-
-        if not results:
-            links = re.findall(
-                r'<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>(.*?)</a>',
-                html, re.S | re.I
-            )
-            snippets = re.findall(
-                r'<td[^>]*class="[^"]*result-snippet[^"]*"[^>]*>(.*?)</td>',
-                html, re.S | re.I
-            )
-            for i, (href, title) in enumerate(links[:max_results]):
-                title = re.sub(r'<[^>]+>', '', title)
-                snippet = re.sub(r'<[^>]+>', '', snippets[i]) if i < len(snippets) else ''
-                if href.startswith('//'):
-                    href = 'https:' + href
-                elif href.startswith('/'):
-                    href = 'https://duckduckgo.com' + href
-                results.append({"title": title.strip(), "snippet": snippet.strip(), "url": href})
-
-        if not results:
-            parser = DDGParser()
-            parser.feed(html)
-            for r in parser.results[:max_results]:
-                if r.get('title') or r.get('snippet'):
-                    results.append(r)
-
-        return results
-    except Exception as e:
-        print(f"[WARN] search error: {e}")
-        return []
-
-
-def build_search_context(query, results):
-    if not results:
-        return ""
-    lines = ["以下是基于用户问题的网络搜索结果，请在回答时参考（如果与问题无关请忽略）："]
-    for i, r in enumerate(results, 1):
-        lines.append(f"[{i}] {r.get('title', '')}")
-        lines.append(f"来源: {r.get('url', '')}")
-        lines.append(f"摘要: {r.get('snippet', '')}")
-        lines.append("")
-    return "\n".join(lines)
-
-
+# -------------------- 消息标准化 --------------------
 def normalize_messages(messages):
     if not isinstance(messages, list):
         return []
@@ -422,14 +247,10 @@ def normalize_messages(messages):
             file_type = clean_text(file.get("type"), 80)
             text = clean_text(file.get("text"), 60000)
             data_url = str(file.get("dataUrl") or "")
-            file_url = str(file.get("url") or "")
-            if file_type.startswith("image/") and (data_url.startswith("data:image/") or file_url.startswith("/uploads/")):
-                img_url = data_url if data_url.startswith("data:image/") else file_url
-                image_parts.append({"type": "image_url", "image_url": {"url": img_url}})
+            if file_type.startswith("image/") and data_url.startswith("data:image/"):
+                image_parts.append({"type": "image_url", "image_url": {"url": data_url}})
                 if name:
                     file_blocks.append(f"\n\n[图片附件: {name}]")
-            elif file_url and not file_url.startswith("data:"):
-                file_blocks.append(f"\n\n[附件: {name or '未命名文件'} | {file_type or 'application/octet-stream'}]\n下载地址: {file_url}")
             elif text:
                 file_blocks.append(f"\n\n[附件: {name or '未命名文件'} | {file_type or 'text/plain'}]\n{text}")
             elif name:
@@ -450,6 +271,7 @@ def normalize_messages(messages):
     return normalized[-16:]
 
 
+# -------------------- 对话存储 --------------------
 def conversation_messages(messages):
     if not isinstance(messages, list):
         return []
@@ -654,7 +476,9 @@ def delete_conversation(conversation_id):
     return conversation_payload(store)
 
 
+# -------------------- API 通道管理 --------------------
 def read_providers():
+    """读取 providers，带缓存"""
     with PROVIDERS_LOCK:
         try:
             mtime = PROVIDERS_PATH.stat().st_mtime_ns
@@ -726,6 +550,7 @@ def get_provider_by_id(provider_id):
 
 
 def validate_api_host(api_host):
+    """验证 apiHost 格式"""
     if not api_host:
         raise ValueError("接口地址不能为空")
     api_host = api_host.strip()
@@ -843,9 +668,11 @@ def models_url(base_url):
     return urllib.parse.urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
 
 
+# -------------------- HTTP Handler --------------------
 class Handler(BaseHTTPRequestHandler):
+    # FIX: 使用 HTTP/1.0 确保 Connection: close 生效
     protocol_version = "HTTP/1.0"
-    server_version = "APIBox/1.0"
+    server_version = "MinAI/2.1"
 
     def log_message(self, fmt, *args):
         print(f"{self.client_address[0]} - {self.log_date_time_string()} {fmt % args}")
@@ -858,9 +685,6 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if parsed.path.startswith("/generated/"):
                 self.serve_generated(parsed.path)
-                return
-            if parsed.path.startswith("/uploads/"):
-                self.serve_uploads(parsed.path)
                 return
             self.serve_static(parsed.path)
         except Exception as e:
@@ -904,22 +728,18 @@ class Handler(BaseHTTPRequestHandler):
                 pass
 
     def route_api(self, method, path):
+        # 聊天核心
         if method == "POST" and path == "/api/chat":
             self.handle_chat()
             return
         if method == "GET" and path == "/api/public-config":
-            self.send_json(200, {"siteTitle": "APIBox", "requireLogin": False})
+            self.send_json(200, {"siteTitle": "MinAI", "requireLogin": False})
             return
         if method == "GET" and path == "/api/models":
             self.handle_models()
             return
-        if method == "POST" and path == "/api/upload":
-            self.handle_upload()
-            return
-        if method == "POST" and path == "/api/search":
-            self.handle_search()
-            return
 
+        # 对话接口
         if path == "/api/conversations/current":
             if method == "GET":
                 self.handle_get_conversation()
@@ -943,6 +763,7 @@ class Handler(BaseHTTPRequestHandler):
             self.handle_delete_conversation()
             return
 
+        # 通道管理
         if method == "GET" and path == "/api/providers":
             try:
                 providers = list_providers()
@@ -963,13 +784,14 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
+        # FIX: 优先匹配 /api/providers/test-connection，避免与 /api/providers/{id} 冲突
         if method == "POST" and path == "/api/providers/test-connection":
             self.handle_test_provider()
             return
 
         if path.startswith("/api/providers/"):
             parts = path.split("/")
-            if len(parts) == 4:
+            if len(parts) == 4:  # /api/providers/{id}
                 provider_id = parts[3]
                 if method == "PUT":
                     body = self.read_json_body()
@@ -1011,37 +833,8 @@ class Handler(BaseHTTPRequestHandler):
 
         self.send_json(404, {"error": "Not found"})
 
-    def handle_upload(self):
-        try:
-            files = parse_multipart_form_data(self)
-            if not files:
-                self.send_json(400, {"error": "未检测到上传文件"})
-                return
-            results = []
-            for f in files:
-                info = save_uploaded_file(f)
-                results.append(info)
-            self.send_json(200, {"files": results})
-        except ValueError as e:
-            self.send_json(413, {"error": str(e)})
-        except Exception as e:
-            print(f"[ERROR] upload: {e}")
-            self.send_json(500, {"error": "上传失败"})
-
-    def handle_search(self):
-        body = self.read_json_body()
-        query = clean_text(body.get("query"), 500)
-        if not query:
-            self.send_json(400, {"error": "搜索内容不能为空"})
-            return
-        try:
-            results = duckduckgo_search(query, max_results=body.get("maxResults", 5))
-            self.send_json(200, {"query": query, "results": results})
-        except Exception as e:
-            print(f"[ERROR] search: {e}")
-            self.send_json(500, {"error": f"搜索失败: {str(e)}"})
-
     def handle_test_provider(self):
+        """测试指定通道的连接"""
         body = self.read_json_body()
         provider_id = body.get("providerId")
         provider = None
@@ -1060,15 +853,8 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             self.send_json(500, {"error": str(e)})
 
-    def _safe_write(self, data):
-        try:
-            self.wfile.write(data)
-            self.wfile.flush()
-            return True
-        except (BrokenPipeError, ConnectionResetError, OSError):
-            return False
-
     def handle_chat(self):
+        """支持流式与非流式两种模式"""
         body = self.read_json_body()
         provider_id = body.get("providerId")
         provider = None
@@ -1086,34 +872,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(400, {"error": "请输入消息内容。"})
             return
 
-        enable_search = body.get("search", False)
-        system_prompt = os.getenv("SYSTEM_PROMPT", "你是一个专业、简洁、友好的 AI 助手。请优先用中文回答。")
-        if enable_search and messages:
-            last_user_msg = None
-            for m in reversed(messages):
-                if m.get("role") == "user":
-                    last_user_msg = m
-                    break
-            if last_user_msg:
-                search_query = ""
-                if isinstance(last_user_msg.get("content"), list):
-                    for part in last_user_msg["content"]:
-                        if part.get("type") == "text":
-                            search_query = part.get("text", "")
-                            break
-                else:
-                    search_query = last_user_msg.get("content", "")
-                if search_query and len(search_query) < 500:
-                    try:
-                        search_results = duckduckgo_search(search_query, max_results=5)
-                        if search_results:
-                            search_context = build_search_context(search_query, search_results)
-                            system_prompt = system_prompt + "\n\n" + search_context
-                    except Exception as e:
-                        print(f"[WARN] search integration failed: {e}")
-
         model = body.get("model") or provider["aiModel"]
         stream = body.get("stream", True)
+        system_prompt = os.getenv("SYSTEM_PROMPT", "你是一个专业、简洁、友好的 AI 助手。请优先用中文回答。")
         payload = {
             "model": model,
             "temperature": body.get("temperature", 0.7),
@@ -1137,6 +898,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             with urllib.request.urlopen(req, timeout=300) as response:
                 if stream:
+                    # FIX: HTTP/1.0 下 Connection: close 自动生效
                     self.send_response(200)
                     self.send_header("Content-Type", "text/event-stream")
                     self.send_header("Cache-Control", "no-cache")
@@ -1144,18 +906,13 @@ class Handler(BaseHTTPRequestHandler):
 
                     decoder = codecs.getincrementaldecoder('utf-8')()
                     full_reply = ""
-                    client_alive = True
 
-                    while client_alive:
-                        try:
-                            chunk = response.read(4096)
-                        except Exception:
-                            break
+                    while True:
+                        chunk = response.read(4096)
                         if not chunk:
                             break
-                        client_alive = self._safe_write(chunk)
-                        if not client_alive:
-                            break
+                        self.wfile.write(chunk)
+                        self.wfile.flush()
 
                         try:
                             decoded = decoder.decode(chunk)
@@ -1175,41 +932,39 @@ class Handler(BaseHTTPRequestHandler):
                         except:
                             pass
 
-                    if client_alive:
-                        try:
-                            remaining = decoder.decode(b'', final=True)
-                            for line in remaining.split("\n"):
-                                line = line.strip()
-                                if line.startswith("data: "):
-                                    data_str = line[6:].strip()
-                                    if data_str == "[DONE]":
-                                        continue
-                                    try:
-                                        data = json.loads(data_str)
-                                        content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
-                                        if content:
-                                            full_reply += content
-                                    except:
-                                        pass
-                        except:
-                            pass
+                    # 刷新解码器中可能剩余的字符
+                    try:
+                        remaining = decoder.decode(b'', final=True)
+                        for line in remaining.split("\n"):
+                            line = line.strip()
+                            if line.startswith("data: "):
+                                data_str = line[6:].strip()
+                                if data_str == "[DONE]":
+                                    continue
+                                try:
+                                    data = json.loads(data_str)
+                                    content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                                    if content:
+                                        full_reply += content
+                                except:
+                                    pass
+                    except:
+                        pass
 
-                        client_alive = self._safe_write(b"data: [DONE]\n\n")
+                    # 发送明确的结束标记
+                    self.wfile.write(b"data: [DONE]\n\n")
+                    self.wfile.flush()
 
-                        if full_reply and client_alive:
-                            assistant_msg = {"role": "assistant", "content": full_reply}
-                            conversation_id = body.get("conversationId") or ""
-                            result = upsert_conversation(conversation_id, stored_messages + [assistant_msg])
-                            meta = json.dumps({"conversationId": result["conversationId"], "conversations": result["conversations"]})
-                            self._safe_write(f"data: {meta}\n\n".encode())
-                    else:
-                        print("[INFO] 客户端已断开，跳过发送结束标记")
-                        if full_reply:
-                            assistant_msg = {"role": "assistant", "content": full_reply}
-                            conversation_id = body.get("conversationId") or ""
-                            upsert_conversation(conversation_id, stored_messages + [assistant_msg])
+                    if full_reply:
+                        assistant_msg = {"role": "assistant", "content": full_reply}
+                        conversation_id = body.get("conversationId") or ""
+                        result = upsert_conversation(conversation_id, stored_messages + [assistant_msg])
+                        meta = json.dumps({"conversationId": result["conversationId"], "conversations": result["conversations"]})
+                        self.wfile.write(f"data: {meta}\n\n".encode())
+                        self.wfile.flush()
 
                 else:
+                    # 非流式模式
                     upstream = json.loads(response.read().decode("utf-8"))
                     choice = (upstream.get("choices") or [{}])[0]
                     message = choice.get("message") or {}
@@ -1349,28 +1104,6 @@ class Handler(BaseHTTPRequestHandler):
         if not head_only:
             self.wfile.write(body)
 
-    def serve_uploads(self, path, head_only=False):
-        safe_name = posixpath.basename(urllib.parse.unquote(path))
-        file_path = (UPLOAD_DIR / safe_name).resolve()
-        try:
-            file_path.relative_to(UPLOAD_DIR.resolve())
-        except ValueError:
-            self.send_json(403, {"error": "Forbidden"})
-            return
-        if not file_path.exists() or not file_path.is_file():
-            self.send_json(404, {"error": "Not found"})
-            return
-        content_type = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
-        body = file_path.read_bytes()
-        self.send_response(200)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Cache-Control", "public, max-age=31536000, immutable")
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Content-Disposition", f"inline; filename*=UTF-8''{urllib.parse.quote(safe_name)}")
-        self.end_headers()
-        if not head_only:
-            self.wfile.write(body)
-
     def read_json_body(self):
         try:
             length = int(self.headers.get("Content-Length", "0"))
@@ -1400,8 +1133,8 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     GENERATED_DIR.mkdir(parents=True, exist_ok=True)
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+    # 初始化对话文件
     if not CONVERSATIONS_PATH.exists():
         atomic_write_json(CONVERSATIONS_PATH, {"activeId": "", "items": []})
     else:
@@ -1414,6 +1147,7 @@ def main():
             print(f"[WARN] 验证 conversations.json 失败: {e}")
             atomic_write_json(CONVERSATIONS_PATH, {"activeId": "", "items": []})
 
+    # 初始化通道文件
     if not PROVIDERS_PATH.exists():
         env_host = os.getenv("API_BASE_URL", "")
         env_key = os.getenv("API_KEY", "")
@@ -1446,7 +1180,7 @@ def main():
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "3000"))
     server = ThreadingHTTPServer((host, port), Handler)
-    print(f"APIBox running at http://{host}:{port}")
+    print(f"MinAI running at http://{host}:{port}")
     server.serve_forever()
 
 
