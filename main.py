@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import base64
 import codecs
 import json
@@ -844,7 +843,7 @@ def models_url(base_url):
 
 
 class Handler(BaseHTTPRequestHandler):
-    protocol_version = "HTTP/1.0"
+    protocol_version = "HTTP/1.1"
     server_version = "APIBox/1.0"
 
     def log_message(self, fmt, *args):
@@ -1145,6 +1144,7 @@ class Handler(BaseHTTPRequestHandler):
                     decoder = codecs.getincrementaldecoder('utf-8')()
                     full_reply = ""
                     client_alive = True
+                    sse_buffer = ""
 
                     while client_alive:
                         try:
@@ -1159,31 +1159,48 @@ class Handler(BaseHTTPRequestHandler):
 
                         try:
                             decoded = decoder.decode(chunk)
-                            for line in decoded.split("\n"):
+                            sse_buffer += decoded
+                            while "\n" in sse_buffer:
+                                line, sse_buffer = sse_buffer.split("\n", 1)
                                 line = line.strip()
-                                if line.startswith("data: "):
-                                    data_str = line[6:].strip()
-                                    if data_str == "[DONE]":
-                                        continue
-                                    try:
-                                        data = json.loads(data_str)
-                                        content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
-                                        if content:
-                                            full_reply += content
-                                    except:
-                                        pass
+                                if not line.startswith("data:"):
+                                    continue
+                                data_str = line[5:].strip()
+                                if data_str == "[DONE]":
+                                    continue
+                                try:
+                                    data = json.loads(data_str)
+                                    content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                                    if content:
+                                        full_reply += content
+                                except:
+                                    pass
                         except:
                             pass
 
                     if client_alive:
                         try:
                             remaining = decoder.decode(b'', final=True)
-                            for line in remaining.split("\n"):
+                            sse_buffer += remaining
+                            while "\n" in sse_buffer:
+                                line, sse_buffer = sse_buffer.split("\n", 1)
                                 line = line.strip()
-                                if line.startswith("data: "):
-                                    data_str = line[6:].strip()
-                                    if data_str == "[DONE]":
-                                        continue
+                                if not line.startswith("data:"):
+                                    continue
+                                data_str = line[5:].strip()
+                                if data_str == "[DONE]":
+                                    continue
+                                try:
+                                    data = json.loads(data_str)
+                                    content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                                    if content:
+                                        full_reply += content
+                                except:
+                                    pass
+                            # 处理可能剩余的一行（没有换行符结尾）
+                            if sse_buffer.strip().startswith("data:"):
+                                data_str = sse_buffer.strip()[5:].strip()
+                                if data_str and data_str != "[DONE]":
                                     try:
                                         data = json.loads(data_str)
                                         content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
@@ -1196,19 +1213,11 @@ class Handler(BaseHTTPRequestHandler):
 
                         client_alive = self._safe_write(b"data: [DONE]\n\n")
 
-                        if full_reply and client_alive:
-                            assistant_msg = {"role": "assistant", "content": full_reply}
-                            conversation_id = body.get("conversationId") or ""
-                            result = upsert_conversation(conversation_id, stored_messages + [assistant_msg])
-                            meta = json.dumps({"conversationId": result["conversationId"], "conversations": result["conversations"]})
-                            self._safe_write(f"data: {meta}\n\n".encode())
-                    else:
-                        print("[INFO] 客户端已断开，跳过发送结束标记")
-                        if full_reply:
-                            assistant_msg = {"role": "assistant", "content": full_reply}
-                            conversation_id = body.get("conversationId") or ""
-                            upsert_conversation(conversation_id, stored_messages + [assistant_msg])
-
+                        assistant_msg = {"role": "assistant", "content": full_reply}
+                        conversation_id = body.get("conversationId") or ""
+                        result = upsert_conversation(conversation_id, stored_messages + [assistant_msg])
+                        meta = json.dumps({"conversationId": result["conversationId"], "conversations": result["conversations"]})
+                        self._safe_write(f"data: {meta}\n\n".encode())
                 else:
                     upstream = json.loads(response.read().decode("utf-8"))
                     choice = (upstream.get("choices") or [{}])[0]
