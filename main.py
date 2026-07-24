@@ -1060,6 +1060,14 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             self.send_json(500, {"error": str(e)})
 
+    def _safe_write(self, data):
+        try:
+            self.wfile.write(data)
+            self.wfile.flush()
+            return True
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            return False
+
     def handle_chat(self):
         body = self.read_json_body()
         provider_id = body.get("providerId")
@@ -1136,13 +1144,18 @@ class Handler(BaseHTTPRequestHandler):
 
                     decoder = codecs.getincrementaldecoder('utf-8')()
                     full_reply = ""
+                    client_alive = True
 
-                    while True:
-                        chunk = response.read(4096)
+                    while client_alive:
+                        try:
+                            chunk = response.read(4096)
+                        except Exception:
+                            break
                         if not chunk:
                             break
-                        self.wfile.write(chunk)
-                        self.wfile.flush()
+                        client_alive = self._safe_write(chunk)
+                        if not client_alive:
+                            break
 
                         try:
                             decoded = decoder.decode(chunk)
@@ -1162,34 +1175,39 @@ class Handler(BaseHTTPRequestHandler):
                         except:
                             pass
 
-                    try:
-                        remaining = decoder.decode(b'', final=True)
-                        for line in remaining.split("\n"):
-                            line = line.strip()
-                            if line.startswith("data: "):
-                                data_str = line[6:].strip()
-                                if data_str == "[DONE]":
-                                    continue
-                                try:
-                                    data = json.loads(data_str)
-                                    content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
-                                    if content:
-                                        full_reply += content
-                                except:
-                                    pass
-                    except:
-                        pass
+                    if client_alive:
+                        try:
+                            remaining = decoder.decode(b'', final=True)
+                            for line in remaining.split("\n"):
+                                line = line.strip()
+                                if line.startswith("data: "):
+                                    data_str = line[6:].strip()
+                                    if data_str == "[DONE]":
+                                        continue
+                                    try:
+                                        data = json.loads(data_str)
+                                        content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                                        if content:
+                                            full_reply += content
+                                    except:
+                                        pass
+                        except:
+                            pass
 
-                    self.wfile.write(b"data: [DONE]\n\n")
-                    self.wfile.flush()
+                        client_alive = self._safe_write(b"data: [DONE]\n\n")
 
-                    if full_reply:
-                        assistant_msg = {"role": "assistant", "content": full_reply}
-                        conversation_id = body.get("conversationId") or ""
-                        result = upsert_conversation(conversation_id, stored_messages + [assistant_msg])
-                        meta = json.dumps({"conversationId": result["conversationId"], "conversations": result["conversations"]})
-                        self.wfile.write(f"data: {meta}\n\n".encode())
-                        self.wfile.flush()
+                        if full_reply and client_alive:
+                            assistant_msg = {"role": "assistant", "content": full_reply}
+                            conversation_id = body.get("conversationId") or ""
+                            result = upsert_conversation(conversation_id, stored_messages + [assistant_msg])
+                            meta = json.dumps({"conversationId": result["conversationId"], "conversations": result["conversations"]})
+                            self._safe_write(f"data: {meta}\n\n".encode())
+                    else:
+                        print("[INFO] 客户端已断开，跳过发送结束标记")
+                        if full_reply:
+                            assistant_msg = {"role": "assistant", "content": full_reply}
+                            conversation_id = body.get("conversationId") or ""
+                            upsert_conversation(conversation_id, stored_messages + [assistant_msg])
 
                 else:
                     upstream = json.loads(response.read().decode("utf-8"))
@@ -1434,5 +1452,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
